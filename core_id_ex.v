@@ -4,7 +4,7 @@
 module    core_id_ex(//input
                       clk,
                       rst,
-                      inst_fun,
+                     // inst_lo,
                       wb_reg_write,
                       wb_memtoreg,
                       mem_memread,
@@ -21,7 +21,7 @@ module    core_id_ex(//input
                       reg_rt,
                       reg_rd,
                       //output
-                      ex_inst_fun,
+                     // ex_inst_lo,
                       ex_wb_reg_write,
                       ex_wb_memtoreg,
                       ex_mem_memread,
@@ -40,7 +40,7 @@ module    core_id_ex(//input
 //input
 input                      clk;
 input                      rst;
-input     [5:0]            inst_fun;
+//input     [15:0]           inst_lo;
 input                      wb_reg_write;
 input                      wb_memtoreg;
 input                      mem_memread;
@@ -57,7 +57,7 @@ input     [4:0]            reg_rs;
 input     [4:0]            reg_rt;
 input     [4:0]            reg_rd;
                       //outpu
-output     [5:0]            ex_inst_fun;
+//output     [15:0]           ex_inst_lo;
 output                      ex_wb_reg_write;
 output                      ex_wb_memtoreg;
 output                      ex_mem_memread;
@@ -74,7 +74,7 @@ output     [4:0]            ex_reg_rs;
 output     [4:0]            ex_reg_rt;
 output     [4:0]            ex_reg_rd; 
 //define regs
-reg     [5:0]            ex_inst_fun;
+//reg     [15:0]           ex_inst_lo;
 reg                      ex_wb_reg_write;
 reg                      ex_wb_memtoreg;
 reg                      ex_mem_memread;
@@ -95,7 +95,7 @@ always@(posedge clk)
 begin
   if(rst)
     begin
-      ex_inst_fun<=6'b000000;
+   //   ex_inst_lo<=15'b000000000000000;
       ex_wb_reg_write<=1'b0;
       ex_wb_memtoreg<=1'b0;
       ex_mem_memread<=1'b0;
@@ -114,7 +114,7 @@ begin
     end
 else
   begin
-      ex_inst_fun<=inst_fun;
+   //   ex_inst_lo<=inst_lo;
       ex_wb_reg_write<=wb_reg_write;
       ex_wb_memtoreg<=wb_memtoreg;
       ex_mem_memread<=mem_memread;
