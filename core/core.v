@@ -17,6 +17,8 @@ module   core(//input
                 mem_addr,
                 mem_data
                 );
+parameter        jal_btb_type=2'b10;
+parameter        jr_btb_type=2'b11;
 //input
 input                clk;
 input                rst;
@@ -33,17 +35,14 @@ output   [31:0]       mem_addr;
 output   [31:0]       mem_data;
 
 // I/O about pc
-wire  [31:0]  br_target;
-wire  [31:0]  j_target;
-wire  [1:0]   pc_src;
-wire          pc_go;
-wire          stall;
+wire          v_pc;
+wire  [31:0]  pc;
 wire  [31:0]  pc_plus4;
 
 // I/O about btb
-wire          if_flush;
-wire  [31:0]  pc_plus4_reg;
-wire  [31:0]  inst_reg;
+//wire          if_flush;
+//wire  [31:0]  pc_plus4_reg;
+//wire  [31:0]  inst_reg;
 wire  [1:0]   btb_type_out;
 wire  [31:0]  btb_target_out;
 wire          btb_v;
@@ -63,73 +62,98 @@ wire [1:0]  if_id_delayed_PHT_out;
 wire [2:0]  if_id_delayed_BHR_out;
 wire [1:0]  if_id_btb_type_out;
 wire        if_id_btb_v_out;                   
-wire [31:0]  pred_target;
+//wire [31:0]  pred_target;
 wire [31:0]  pc_out;
+wire [31:0]  pc_plus_4_out;
+wire [31:0]  inst_word_out;
 
 //output of id
-wire   [4:0]    id_ex_regrt_net;
-wire            id_ex_memread_net;
-wire            id_ex_wb_regwrite_net;
-wire            ex_mem_memread_net;
-wire   [4:0]    ex_dest_reg_net;
-wire   [4:0]    mem_dest_reg_net;
-wire            ex_mem_regwrite;
-wire            mem_wb_regwrite;
-wire            ex_mem_regrd;
-wire            mem_wb_regrd;
-wire            ex_mem_regdata;
-wire            mem_wb_regdata;  
-               //output
 wire                  stall_pipeline_alu;
 wire                  stall_pipeline_br;
-wire                  wb_regwrite;
-wire                  wb_memtoreg;
-wire                  mem_branch;
-wire                  mem_memread;
-wire                  mem_memwrite;
-wire                  ex_aluop;
-wire                  ex_alusrc;
-wire                  ex_regdst;
-wire                  regread1;
-wire                  regread2;
-wire                  if_id_regrs;
-wire                  if_id_regrt;
-wire                  if_id_regrd;
-wire                  ll_mem;
-wire                  sc_mem;   
-wire                  ex_reg_rt; 
-
-//to if stage 
+wire   [31:0]         id_btb_target_out;
 wire                  update_btb_target_out;
-wire    [31:0]        id_btb_target_out;
-wire    [1:0]         id_btb_type_out;
+wire   [1:0]          id_btb_type_out;
 wire                  update_BP_out;
 wire                  pred_right_out;
 wire                  taken;
-wire    [1:0]         delayed_PHT_out;
-wire    [2:0]         delayed_BHR_out;
+wire   [1:0]          delayed_PHT_out;
+wire   [2:0]          delayed_BHR_out;
 wire                  recover_push;
-wire    [31:0]        recover_push_addr;
+wire   [31:0]         recover_push_addr;
 wire                  recover_pop;
-
+wire                  wb_regwrite;
+wire                  wb_memtoreg;
+//wire                  mem_branch;
+wire                  mem_memread;
+wire                  mem_memwrite;
+wire   [3:0]          ex_aluop;
+wire   [1:0]          ex_alusrc;
+wire                  ex_regdst;
+wire   [31:0]         regread1;
+wire   [31:0]         regread2;
+wire   [4:0]          if_id_regrs;
+wire   [4:0]          if_id_regrd;
+wire   [4:0]          if_id_regrt;
+wire                  if_flush;             
+wire   [1:0]          pc_src;
+wire                  ll_mem;
+wire                  sc_mem;
+wire   [31:0]         sign_extend;
 //output of id_ex_reg
+wire                      ex_wb_reg_write;
 wire                      ex_wb_memtoreg;
+wire                      ex_mem_memread;
 wire                      ex_mem_memwrite;
 wire                      ex_mem_ll_mem;
 wire                      ex_mem_sc_mem;
-wire                      ex_regread1;
-wire                      ex_regread2;
-wire                      ex_reg_rs;
-wire                      ex_reg_rd; 
+wire                      ex_regdst_reg;
+wire     [1:0]            ex_aluop_reg;
+wire                      ex_alusrc_reg;
+wire     [31:0]           ex_regread1;
+wire     [31:0]           ex_regread2;
+wire     [31:0]           ex_sign_extend;
+wire     [4:0]            ex_reg_rs;
+wire     [4:0]            ex_reg_rt;
+wire     [4:0]            ex_reg_rd; 
 
 //output of ex
+wire [31:0] alu_result;
+wire [31:0] data_to_mem;
+wire [4:0]  ex_dest_rd;
+wire        zero;
+
+
+ //output of ex_mem
+//wire          mem_branch_reg;
+wire          mem_mem_read;
+wire          mem_mem_write;
+wire          mem_ll_mem;
+wire          mem_sc_mem;
+wire          mem_reg_write;
+wire          mem_memtoreg;
+wire          mem_alu_zero;
+wire  [31:0]  mem_addr;
+wire  [31:0]  mem_data;
+wire  [4:0]   mem_dest_reg;
+
+
+// output of mem_wb
+wire            wb_regwrite_reg;
+wire            wb_memtoreg_reg;
+wire  [31:0]    wb_aluresult;
+wire  [31:0]    wb_read_memdata;
+wire  [4:0]     wb_dest_reg;  
+
+//input to pc
+wire     pc_go;
+wire     stall;
 
 core_pc   pc_dut(//input
                .clk(clk),
                .rst(rst),
                .btb_target(btb_target_out),
                .ras_target(ret_addr_out),
-               .pc_go(pc_go),
+               .pc_go(v_inst),
                .stall(stall),
                .good_target(id_btb_target_out),
                .id_pc_src(update_btb_target_out),
@@ -142,7 +166,7 @@ core_pc   pc_dut(//input
                );
                
               
-core_BTB      BTB(//input
+core_btb      btb_dut(//input
                   .clk(clk),
                   .rst(rst),
                   .pc(pc),
@@ -158,7 +182,7 @@ core_BTB      BTB(//input
                   .en_btb_pred(en_btb_pred) // only valid when both btb_v and PHT_pred_taken valid are vallid
                   );
                   
-core_PHT        PHT(//input
+core_pht        pht_dut(//input
                    .clk(clk),
                    .rst(rst),
                    .if_pc(pc[10:5]),  // pc[10:5]
@@ -175,23 +199,23 @@ core_PHT        PHT(//input
                    .PHT_out(PHT_out)
                    );
                    
-core_RAS        RAS(//input 
+core_ras        ras_dut(
                    .clk(clk),
                    .rst(rst),
                    //inst fetch stage prediction 
                    .en_call_in((btb_v&&(btb_type_out==jal_btb_type))), //in my previous version ,it equals en_ret_addr_in 
-                   .en_ret_in((btb_V&&(btb_type_out==jr_btb_type))),//in my previous version ,it equals en_ret_addr_out
-                   .ret_addr_in(pc_plus4),// which is gened by call inst
+                   .en_ret_in((btb_v&&(btb_type_out==jr_btb_type))),//in my previous version ,it equals en_ret_addr_out
+                   .ret_addr_in(pc_plus4[31:2]),// which is gened by call inst
                    // decode stage recover something wrong,which caused by misprediction in btb, in RAS.
                    .recover_push(recover_push),//previous inst was preded as a JR inst incorrectly.
-                   .recover_push_addr(recover_push_addr),//push back the top return addr to RAs
+                   .recover_push_addr(recover_push_addr[31:2]),//push back the top return addr to RAs
                    .recover_pop(recover_pop),// previous inst was preded as a jal inst incorrectly.
                    
                    ////output
                    //inst fetch stage poping top addr
                    .ret_addr_out(ret_addr_out)
                    );
-
+wire    [31:0]  pred_target;
 assign     pred_target=(btb_type_out==jr_btb_type)? ret_addr_out:btb_target_out;                                    
 core_if_id    if_id_reg(//input
                        .clk(clk),
@@ -230,12 +254,12 @@ core_id    id_dut   (//input
                   .pred_target(if_id_pred_target_out),
                   .delayed_PHT(if_id_delayed_PHT_out),
                   .delayed_BHR(if_id_delayed_BHR_out),
-                  .if_id_inst_word(inst_reg),
+                  .if_id_inst_word(inst_word_out),
                   //hazard_detection_for_alu
                   .id_ex_memread(ex_mem_memread),
                   .id_ex_regrt(ex_reg_rt),
                   //branch target 
-                  .if_id_plus_4(pc_plus4_reg),
+                  .if_id_plus_4(pc_plus_4_out),
                   //hazard_detection_for_branch
                   .id_ex_wb_regwrite(ex_wb_reg_write),
                   .mem_mem_read(mem_mem_read),
@@ -243,7 +267,7 @@ core_id    id_dut   (//input
                   .mem_dest_reg(mem_dest_reg),
                   //forwarding_unit_id
                   .ex_mem_regwrite(mem_reg_write),
-                  .mem_wb_regwrite(wb_regwrite),
+                  .mem_wb_regwrite(wb_regwrite_reg),
                   .ex_mem_regrd(mem_dest_reg),
                   .mem_wb_regrd(wb_dest_reg),
                   .ex_mem_regdata(mem_addr),
@@ -266,7 +290,7 @@ core_id    id_dut   (//input
                   //output to next stage
                   .wb_regwrite(wb_regwrite),
                   .wb_memtoreg(wb_memtoreg),
-                  .mem_branch(mem_branch),
+                 // .mem_branch(mem_branch),
                   .mem_memread(mem_memread),
                   .mem_memwrite(mem_memwrite),
                 //  ex_reg_dest,
@@ -315,9 +339,9 @@ core_id_ex   id_ex_reg_dut(//input
                       .ex_mem_memwrite(ex_mem_memwrite),
                       .ex_mem_ll_mem(ex_mem_ll_mem),
                       .ex_mem_sc_mem(ex_mem_sc_mem),
-                      .ex_regdst(ex_regdst),
-                      .ex_aluop(ex_aluop),
-                      .ex_alusrc(ex_alusrc),
+                      .ex_regdst(ex_regdst_reg),
+                      .ex_aluop(ex_aluop_reg),
+                      .ex_alusrc(ex_alusrc_reg),
                       .ex_regread1(ex_regread1),
                       .ex_regread2(ex_regread2),
                       .ex_sign_extend(ex_sign_extend),
@@ -338,7 +362,7 @@ core_ex    ex_dut   (//input
                   .id_ex_rt(ex_reg_rt),
                   .id_ex_rd(ex_reg_rd),
                   .mem_regwrite(mem_reg_write),
-                  .wb_regwrite(wb_regwrite),
+                  .wb_regwrite(wb_regwrite_reg),
                   .mem_regrd(mem_dest_reg),
                   .wb_regrd(wb_dest_reg),
                   .mem_reg_data(mem_addr),
@@ -350,12 +374,12 @@ core_ex    ex_dut   (//input
                   .ex_dest_rd(ex_dest_rd),
                   .zero(zero)
                   );
- 
-                  
+
+           
 core_ex_mem   ex_mem_reg_dut(//input
                       .clk(clk),
                       .rst(rst),
-                      .branch(branch),
+                    //  .branch(branch),
                       .mem_read(ex_mem_memread),
                       .mem_write(ex_mem_memwrite),
                       .ll_mem(ex_mem_ll_mem),
@@ -367,7 +391,7 @@ core_ex_mem   ex_mem_reg_dut(//input
                       .reg_read2(data_to_mem),
                       .dest_reg(ex_dest_rd),
                       //output
-                      .mem_branch(mem_branch),
+                   //   .mem_branch(mem_branch),
                       .mem_mem_read(mem_mem_read),
                       .mem_mem_write(mem_mem_write),
                       .mem_ll_mem(mem_ll_mem),
@@ -382,7 +406,9 @@ core_ex_mem   ex_mem_reg_dut(//input
 assign    mem_head[3]=mem_mem_write?1'b1:1'b0;
 assign    mem_head[2]=mem_mem_read||mem_mem_write;  
 assign    mem_head[1:0]={!mem_ll_mem,!mem_sc_mem};   
-assign    v_mem=mem_mem_read||mem_mem_write;   // a waste of logic ,but it's necessary for data cache               
+assign    v_mem=mem_mem_read||mem_mem_write;   // a waste of logic ,but it's necessary for data cache 
+
+    
 core_mem_wb  mem_wb_dut(//input
                      .clk(clk),
                      .rst(rst),
@@ -393,8 +419,8 @@ core_mem_wb  mem_wb_dut(//input
                      .valid_read_memdata(v_data),
                      .dest_reg(mem_dest_reg),
                      //output
-                     .wb_regwrite(wb_regwrite),
-                     .wb_memtoreg(wb_memtoreg),
+                     .wb_regwrite(wb_regwrite_reg),
+                     .wb_memtoreg(wb_memtoreg_reg),
                      .wb_aluresult(wb_aluresult),
                      .wb_read_memdata(wb_read_memdata),
                      .wb_dest_reg(wb_dest_reg)

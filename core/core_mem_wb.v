@@ -8,7 +8,7 @@ module  core_mem_wb(//input
                      memtoreg,
                      aluresult,
                      read_memdata,
-                     v_read_memdata,
+                     valid_read_memdata,
                      dest_reg,
                      //output
                      wb_regwrite,
@@ -24,7 +24,7 @@ input                     regwrite;
 input                     memtoreg;
 input    [31:0]           aluresult;
 input    [31:0]           read_memdata;
-input                     v_read_memdata;
+input                     valid_read_memdata;
 input    [4:0]            dest_reg;
                      //output
 output                     wb_regwrite;
@@ -49,7 +49,7 @@ begin
       wb_read_memdata<=32'h0000;
       wb_dest_reg<=5'b00000;
     end
- else if(v_read_memdata)
+ else if(valid_read_memdata)
     begin
       wb_regwrite<=regwrite;
       wb_memtoreg<=memtoreg;

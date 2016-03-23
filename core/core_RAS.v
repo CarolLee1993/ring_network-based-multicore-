@@ -3,7 +3,7 @@
 //module name: return address stack which is used to predict indirect branch target ,
 //             in MIPS such as JR or JALR(which i didn't implemente)
 
-module   core_RAS(//input 
+module   core_ras(//input 
                    clk,
                    rst,
                    //inst fetch stage prediction 
@@ -29,15 +29,19 @@ input              clk;
 input              rst;
 input              en_call_in;
 input              en_ret_in;
-input     [31:0]   ret_addr_in;
+input     [29:0]   ret_addr_in;
 input              recover_push;
-input     [31:0]   recover_push_addr;
+input     [29:0]   recover_push_addr;
 input              recover_pop;
 
 
 //output  
-output             ret_addr_out;
+output     [31:0]      ret_addr_out;
 
+reg        en_RAS_ret;
+reg        en_RAS_rec;
+reg        en_pointer;
+reg  [1:0] ret_addr_out_src;
 //reg of RAS
 reg   [29:0]   RAS_1;
 reg   [29:0]   RAS_2;
@@ -55,14 +59,14 @@ always@(posedge clk)
 begin
   if(rst)
     pointer<=3'b000;
-  else if(pointer_src==ps2)
-    pointer<=pointer-2;
-  else if(pointer_src==ps1)
-    pointer<=pointer-1;
-  else if(pointer_src==pp1)
-    pointer<=pointer+1;
-  else if(pointer_src==pp2)
-    pointer<=pointer+2;
+  else if(en_pointer&&(pointer_src==ps2))
+    pointer<=pointer-3'b010;
+  else if(en_pointer&&(pointer_src==ps1))
+    pointer<=pointer-3'b001;
+  else if(en_pointer&&(pointer_src==pp1))
+    pointer<=pointer+3'b001;
+  else if(en_pointer&&(pointer_src==pp2))
+    pointer<=pointer+3'b010;
 end
     
 // reg of en vector 
@@ -112,10 +116,7 @@ begin
 end    
 //control signals  for RAS
 //reg of en_RAS_ret and en_RAS_rec
-reg  en_RAS_ret;
-reg  en_RAS_rec;
-reg  en_pointer;
-reg  ret_addr_out_src;
+
 always@(*)
 begin
   //default values 
@@ -269,7 +270,7 @@ begin
 end
 
 //read RAS port of pointer
-reg  [31:0] pointer_rd_ras;
+reg  [29:0] pointer_rd_ras;
 always@(*)
 begin
   case(pointer)
@@ -286,7 +287,7 @@ begin
 end
 
 //read RAS port of pointere+1
-reg  [31:0] pointerP1_rd_ras;
+reg  [29:0] pointerP1_rd_ras;
 always@(*)
 begin
   case(pointer)
@@ -301,8 +302,9 @@ begin
     default:pointerP1_rd_ras=30'hzzzzzzzz;
   endcase
 end
-
-assign ret_addr_out=(ret_addr_out_src==2'b00)?recover_push_addr:
+wire  [29:0]   ret_addr_out_temp;
+assign ret_addr_out_temp=(ret_addr_out_src==2'b00)?recover_push_addr:
                     (ret_addr_out_src==2'b01)?pointer_rd_ras:
                     (ret_addr_out_src==2'b10)?pointerP1_rd_ras:30'hzzzzzzzz;
+assign  ret_addr_out={ret_addr_out_temp,,2'b00};
 endmodule

@@ -52,25 +52,29 @@ wire     [1:0]   pc_src1;
 assign    pc_src1=(btb_v&&(btb_type==br_type||btb_type==j_type||btb_type==jal_type))?2'b11:(btb_v&&btb_type==jr_type)?2'b10:2'b01;
 assign    pc_src=(id_pc_src==1'b1)?2'b00:pc_src1;
 
+reg  [31:0]     pc_temp;
+always@(*)
+begin
+   case(pc_src)
+	2'b00:pc_temp=good_target;
+	2'b01:pc_temp=pc_plus4;
+	2'b10:pc_temp=ras_target;
+	2'b11:pc_temp=btb_target;
+	default:pc_temp=pc_plus4;
+	endcase
+end
 //reg
 reg  [31:0]     pc;
 always@(posedge clk)
 begin
   if(rst)
-    pc<=initial_addr;
-  else if(pc_go)
+    pc<=32'h00040000;
+  else if(pc_go&&!stall)
     begin
-      if(pc_src==2'b00)
-      pc<=good_target;
-      else if(pc_src==2'b01)
-      pc<=pc_plus4;
-      else if(pc_src==2'b10)
-      pc<=ras_target;
-      else if(pc_src==2'b11)
-      pc<=btb_target;
+      pc<=pc_temp;
      end
 end
 assign  pc_plus4=pc+4;
-assign  v_pc_out=pc_go&&stall?1'b0:1'b1;
+assign  v_pc_out=(pc_go&&!stall);//?1'b0:1'b1;
 assign  pc_out=pc;
 endmodule

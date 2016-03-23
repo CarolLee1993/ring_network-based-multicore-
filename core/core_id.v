@@ -49,7 +49,7 @@ module    core_id(//input
                   //output to next stage
                   wb_regwrite,
                   wb_memtoreg,
-                  mem_branch,
+                //  mem_branch,
                   mem_memread,
                   mem_memwrite,
                   ex_aluop,
@@ -137,7 +137,7 @@ output   [31:0]         recover_push_addr;
 output                  recover_pop;
 output                  wb_regwrite;
 output                  wb_memtoreg;
-output                  mem_branch;
+//output                  mem_branch;
 output                  mem_memread;
 output                  mem_memwrite;
 output   [3:0]          ex_aluop;
@@ -155,6 +155,14 @@ output                  sc_mem;
 output   [31:0]         sign_extend;
 //output   [15:0]          id_inst_lo;
 
+wire blez_taken;
+wire bgtz_taken;
+wire bltz_taken;
+wire bgez_taken;
+wire  src1_eq_src2;
+wire  br_taken;
+
+assign br_taken=blez_taken||bgtz_taken||bltz_taken||bgez_taken;
 // froword delayed PHT and delayed BHR to if stage
 assign   delayed_BHR_out=delayed_BHR;
 assign   delayed_PHT_out=delayed_PHT;
@@ -197,7 +205,7 @@ reg       ll_mem;
 reg       sc_mem;
 reg       jal;
 reg       jr;
-reg       jalr; 
+//reg       jalr; 
 assign  wb_memtoreg=memtoreg;
 assign  wb_regwrite=regwrite;
 assign  mem_memread=memread;
@@ -222,7 +230,7 @@ begin
   sc_mem=1'b0;
   jal=1'b0;
   jr=1'b0;
-  jalr=1'b0;
+ // jalr=1'b0;
   case(if_id_inst_word[31:26])
     R_type:
       begin
@@ -230,10 +238,10 @@ begin
           begin
             jr=1'b1;
           end
-      else if(if_id_inst_word[5:0]==6'b001001)
-        begin
-          jalr=1'b1;
-        end
+    //  else if(if_id_inst_word[5:0]==6'b001001)
+     //   begin
+      //    jalr=1'b1;
+    //    end
         ex_regdst=1'b1;
         regwrite=1'b1;
         ex_aluop=4'b0010;
@@ -290,17 +298,22 @@ begin
         ex_aluop=4'b1011;
       end
     bltz_type:
+	 begin
+	 //bltz 
+	  if(if_id_inst_word[20:16]==5'b00000)
       begin
         branch=1'b1;
         ex_alusrc=2'b01;
         ex_aluop=4'b1100;
       end
-    bgez_type:
+    // bgez  if_id_inst_word[20:16]==5'b00001
+	 else 
       begin
         branch=1'b1;
         ex_alusrc=2'b01;
         ex_aluop=4'b1101;
       end
+	 end
     //j_type
     jump_type:
       begin
@@ -374,11 +387,11 @@ else
     
     //fotward_b
   if(mem_wb_regwrite&&(mem_wb_regrd!=5'b00000)&&   !(ex_mem_regwrite&&(ex_mem_regrd!=5'b00000)&&(ex_mem_regrd!=reg_rt)) &&(mem_wb_regrd==reg_rt))
-    forward_a=2'b01;
+    forward_b=2'b01;
 else if(ex_mem_regwrite&&(ex_mem_regrd!=5'b00000)&&(ex_mem_regrd==reg_rt))
-    forward_a=2'b10;
+    forward_b=2'b10;
 else
-    forward_a=2'b00;
+    forward_b=2'b00;
 end
 
 // regfile
@@ -387,9 +400,9 @@ core_id_regfile   regfile(//input
                          .rst(rst),
                          .raddr1(if_id_inst_word[25:21]),
                          .raddr2(if_id_inst_word[20:16]),
-                         .rf_write(wb_reg_write),
-                         .waddr(wb_reg_dest),
-                         .data(wb_reg_data),
+                         .rf_write(mem_wb_regwrite),
+                         .waddr(mem_wb_regrd),
+                         .data(mem_wb_regdata),
                          //output
                          .rd_data1(regread1),
                          .rd_data2(regread2)
@@ -475,7 +488,7 @@ begin
         pred_right_out=1'b0;
     end
     //when  decode find the inst is a br
-  else if(branch&&(btb_type==br_btb_type&&pred_target!=br_target&&btb_v||btb_type!=br_btb_type||btb_v==1'b0))
+  else if(br_taken&&(btb_type==br_btb_type&&pred_target!=br_target&&btb_v||btb_type!=br_btb_type||btb_v==1'b0))
     begin
       update_btb_target_out=1'b1;
       btb_target_out=br_target;
@@ -502,6 +515,10 @@ reg  [31:0]       recover_push_addr;
 reg               recover_pop;
 always@(*)
 begin
+   //defalut values
+     recover_pop=1'b0;
+     recover_push=1'b0;
+     recover_push_addr=pred_target;
   if(!jal&&btb_type==jal_btb_type&&btb_v)
     begin
       recover_pop=1'b1;
@@ -511,13 +528,14 @@ else if(!jr&&btb_type==jr_btb_type&&btb_v)
      recover_push=1'b1;
      recover_push_addr=pred_target;
    end
- else
-   begin
-     recover_pop=1'b0;
-     recover_push=1'b0;
-     recover_push_addr=pred_target;
-   end
 end
+
+
+
+assign  blez_taken=(branch&&(cmp_src1<=32'h00000000)&&(ex_aluop==4'b1010));
+assign  bgtz_taken=(branch&&(cmp_src1>32'h00000000)&&(ex_aluop==4'b1011));
+assign  bltz_taken=(branch&&(cmp_src1<32'h00000000)&&(ex_aluop==4'b1100));
+assign  bgez_taken=(branch&&(cmp_src1>=32'h00000000)&&(ex_aluop==4'b1101));
 assign  src1_eq_src2=cmp_src1==cmp_src2?1'b1:1'b0;
 assign  pc_src=(src1_eq_src2&&branch==1'b1)?2'b01:jump?2'b10:2'b00;  
 assign  if_flush=|pc_src;

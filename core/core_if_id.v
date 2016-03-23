@@ -24,7 +24,7 @@ module     core_if_id(//input
                        delayed_PHT_out,
                        delayed_BHR_out,
                        btb_type_out,
-                       btb_v_out,
+                       btb_v_out
                        );
 //input
 input        clk;

@@ -1,7 +1,7 @@
 //date:2016/3/19
 // engineer:ZhaiShaoMin
 //module name:BTB module used to cache recent target of jumps and branches
-module  core_BTB(//input
+module  core_btb(//input
                   clk,
                   rst,
                   pc,
@@ -54,50 +54,61 @@ input              PHT_pred_taken;
  // write btb tag
  always@(posedge clk)
  begin
-   if(rst)
-     begin:tagblock
-       integer i;
-       for (i=0 ; i<btb_depth; i=i+1)
-       begin
-          btb_tag[i]<=BTB_TAG_INIT;
-          btb_target[i]<=BTB_TARGET_INIT;
-       end
-     end
- else if(update_btb_target)
+  // if(rst)
+    // begin:tagblock
+    //   integer i;
+    //   for (i=0 ; i<btb_depth; i=i+1)
+    //   begin
+    //      btb_target[pc_index]<=BTB_TARGET_INIT;
+    //   end
+   //  end
+ //else 
+ if(update_btb_target)
   begin
-     btb_target[pc_index]<={btb_target_in,btb_type_in};
+     btb_target[pc_index]<={btb_target_in[31:2],btb_type_in};
    end
 end
 
 //write btb target btb
 always@(posedge clk)
  begin
-   if(rst)
-    begin:targetblock
-      integer j;
-         for (j=0 ; j<btb_depth; j=j+1)
-         begin
-           btb_tag[j]<=BTB_TAG_INIT;
-        end
-    end
- else if(update_btb_tag)
+  // if(rst)
+  //  begin:targetblock
+   //   integer j;
+   //      for (j=0 ; j<btb_depth; j=j+1)
+   //      begin
+   //        btb_tag[pc_index]<=BTB_TAG_INIT;
+   //      end
+   // end
+ // else
+  if(update_btb_tag)
    begin
      btb_tag[pc_index]<=btb_tag_in;
    end
 end
 
+reg   [31:0]  btb_temp;
+always@(*)
+begin
+  btb_temp=btb_target[pc_index];
+end
 
+reg  [10:0]  btb_tag_out;
+always@(*)
+begin
+  btb_tag_out=btb_tag[pc_index];
+end
 //read btb
-wire   [31:0]  btb_temp;
-wire   [31:0]  btb_target_out;
-wire   [1:0]   btb_type_out;
-wire   [10:0]  btb_tag_out;
+//wire   [31:0]  btb_temp;
+//wire   [31:0]  btb_target_out;
+//wire   [1:0]   btb_type_out;
+//wire   [10:0]  btb_tag_out;
 wire           btb_hit;
-assign   btb_temp=btb_target[pc_index];
+//assign   btb_temp=btb_target[pc_index];
 assign   btb_target_out={btb_temp[31:2],2'b00};
 assign   btb_type_out=btb_temp[1:0];
-assign   btb_tag_out=btb_tag[pc_index];
-assign   btb_hit=(btb_tag_out==btb_tag_in)?1'b1:1'b0;
+//assign   btb_tag_out=btb_tag[pc_index];
+assign   btb_hit=(btb_tag_out==btb_tag_in);//?1'b1:1'b0;
 assign   btb_v=btb_hit;
 assign   en_btb_pred=btb_v&&PHT_pred_taken;
 endmodule

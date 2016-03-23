@@ -1,7 +1,7 @@
 //date:2016/3/20
 //engineer:ZhaiShaoMin
 //module name: PHT :Pattern History Table
-module  core_PHT(//input
+module  core_pht(//input
                    clk,
                    rst,
                    if_pc,  // pc[10:5]
@@ -29,11 +29,11 @@ input     [3:0]     BHR_in;
 input     [1:0]     delayed_PHT;
 //output
 output              pred_out; 
-output              BHR_rd;
-output              PHT_out;
+output    [3:0]     BHR_rd;
+output    [1:0]     PHT_out;
 
 wire  [1:0]   PHT_out;
-wire  [2:0]   BHR_rd;
+wire  [3:0]   BHR_rd;
 reg           en_update_PHT;
 reg   [1:0]   PHT_in;
 //reg of BHT
@@ -55,15 +55,16 @@ assign   index_BHT_id={id_pc[5]^id_pc[4],id_pc[3]^id_pc[2],id_pc[1]^id_pc[0]};
 // update BHT
 always@(posedge clk)
 begin
-  if(rst)   
-    begin :resetBHT
-      integer i;
-      for(i=0;i<8;i=i+1)
-      begin
-        BHT[i]<=4'b0000;
-      end
-    end
-  else if(update_BP)
+ // if(rst)   
+   // begin :resetBHT
+   //   integer i;
+   //   for(i=0;i<8;i=i+1)
+   //   begin
+   //     BHT[index_BHT_id]<=4'b0000;
+   //   end
+  //  end
+ // else 
+ if(update_BP)
     begin
       if(taken)
           BHT[index_BHT_id]<={BHR_in[2:0],1'b1};
@@ -75,15 +76,16 @@ end
 //update PHT
 always@(posedge clk)
 begin
-  if(rst)
-    begin:resetPHT
-      integer j;
-      for(j=0;j<128;j=j+1)
-      begin
-        PHT[j]<=2'b00;
-      end
-    end
-  else if(en_update_PHT)
+ // if(rst)
+  //  begin:resetPHT
+   //   integer j;
+   //   for(j=0;j<128;j=j+1)
+   //   begin
+    //    PHT[index_PHT_id]<=2'b00;
+    //  end
+    //end
+  //else 
+  if(en_update_PHT)
     begin
       PHT[index_PHT_id]<=PHT_in;
     end
@@ -123,7 +125,7 @@ begin
 end
 
 //read BHT
-assign  BHR_rd=BHT[index_BHT_if];
+assign   BHR_rd=BHT[index_BHT_if];
 //read PHT
 assign  PHT_out=PHT[index_PHT_if];
 assign  pred_out=PHT_out[1];
