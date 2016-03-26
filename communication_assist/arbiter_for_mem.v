@@ -40,26 +40,27 @@ module      arbiter_for_mem(//input
  reg  [1:0]   nstate;
  reg  [1:0]   state;
  
- wire [2:0] v_vector;
- assign v_vector={v_i_m_areg,v_d_m_areg,v_mem_download};
- reg  [2:0] seled_v;
+// wire [2:0] v_vector;
+// assign v_vector={v_i_m_areg,v_d_m_areg,v_mem_download};
+ wire   [2:0] seled_v;
  reg        ack_m_download;
  reg        ack_d_m_areg;
  reg        ack_i_m_areg;
  reg        v_m_download_m;
  reg        v_d_m_areg_m;
  reg        v_i_m_areg_m;
+ 
+ assign seled_v=(v_i_m_areg==1'b1)?3'b100:(v_d_m_areg==1'b1)?3'b010:(v_mem_download==1'b1)?3'b001:3'b000;
+ 
  always@(*)
  begin
+   //default values
+	{ack_i_m_areg,ack_d_m_areg,ack_m_download}=3'b000;
+	{v_i_m_areg_m,v_d_m_areg_m,v_m_download_m}=3'b000;
+	nstate=state;
    case(state)
      arbiter_idle:
        begin
-         case(v_vector)
-           3'b1xx:seled_v=3'b100;
-           3'b01x:seled_v=3'b010;
-           3'b001:seled_v=3'b001;
-           default:seled_v=3'b000;
-         endcase
            {ack_i_m_areg,ack_d_m_areg,ack_m_download}=seled_v;
            {v_i_m_areg_m,v_d_m_areg_m,v_m_download_m}=seled_v;
            if(seled_v==3'b100)
@@ -104,7 +105,7 @@ end
 always@(posedge clk)
 begin
   if(rst)
-    state<=4'b0001;
+    state<=2'b00;
   else 
     state<=nstate;
 end                         

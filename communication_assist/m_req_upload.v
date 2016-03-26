@@ -66,26 +66,26 @@ wire                         clr_sel_cnt_net;
 wire                         inc_sel_cnt_net;
 wire                         inc_sel_cnt_inv_net;
 wire                         en_flit_max_in_net;
-
+wire                         en_inv_ids_net;
 FSM_upload_flit   req_fsm_dut (// input
                               .clk(clk),
                               .rst(rst),
                               .en_for_reg(v_flits_in),
                               .out_req_fifo_rdy(out_req_fifo_rdy_in),
-                              .cnt_invs_eq_3(cnt_invs_eq_3),
-                              .cnt_eq_max(cnt_eq_max),
+                              .cnt_invs_eq_3(cnt_invs_eq_3_net),
+                              .cnt_eq_max(cnt_eq_max_net),
                               .head_flit(head_flit),
                               .inv_ids_reg(inv_ids_reg_net),
                               .sel_cnt_invs(sel_cnt_invs_net),
-                              .sel_cnt_eq_0(sel_cnt_eq_0_net),
+                              .sel_cnt_eq_0(cnt_eq_0_net),
                               // output
                               .en_inv_ids(en_inv_ids_net),
                               .en_flit_max_in(en_flit_max_in_net),
-                              .inc_sel_cnt_invs(inc_sel_cnt_invs_net),
+                              .inc_sel_cnt_invs(inc_sel_cnt_inv_net),
                               .inc_sel_cnt(inc_sel_cnt_net),
                               .ctrl(ctrl_out),
                               .clr_max(clr_max_net),
-                              .clr_inv_ids(clr_inv_ids),
+                              .clr_inv_ids(clr_inv_ids_net),
                               .clr_sel_cnt_inv(clr_sel_cnt_inv_net),
                               .clr_sel_cnt(clr_sel_cnt_net),
                               .dest_sel(dest_sel_net),
@@ -119,7 +119,7 @@ upload_datapath   req_datapath_dut(// input
                          .datahi4(datahi4),
                          .datalo4(datalo4),   */
                          //output 
-                         .flit_out(flit_out_net),
+                         .flit_out(flit_out),
                          .cnt_eq_max(cnt_eq_max_net),
                          .cnt_invs_eq_3(cnt_invs_eq_3_net),
                          .cnt_eq_0(cnt_eq_0_net),

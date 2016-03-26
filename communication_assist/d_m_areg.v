@@ -18,7 +18,7 @@ input    [143:0]        d_flits_m;
 input                   v_d_flits_m;
 input                   mem_done_access;
                    //output
-output   [143:0]         d_m_areg_flits;
+output   [175:0]         d_m_areg_flits;
 output                   v_d_m_areg_flits;
 output                   d_m_areg_state;
 
@@ -26,8 +26,10 @@ output                   d_m_areg_state;
 reg      d_m_cstate;
 reg      [175:0]   flits_reg;
 
+assign   v_d_m_areg_flits=d_m_cstate;
 assign   d_m_areg_state=d_m_cstate;// when m_d_cstate is 1, it means this module is busy and
                                    // can't receive other flits. oterwise,able to receiving flits
+
 always@(posedge clk)
 begin
   if(rst||mem_done_access)
@@ -43,4 +45,6 @@ begin
   else if(v_d_flits_m)
     d_m_cstate<=1'b1;
 end
+
+assign d_m_areg_flits=flits_reg;
 endmodule

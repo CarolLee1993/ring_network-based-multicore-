@@ -26,6 +26,7 @@ output                   m_d_areg_state;
 reg      m_d_cstate;
 reg      [143:0]   flits_reg;
 
+assign   v_m_d_areg_flits=m_d_cstate;
 assign   m_d_areg_state=m_d_cstate;// when m_d_cstate is 1, it means this module is busy and
                                    // can't receive other flits. oterwise,able to receiving flits
 always@(posedge clk)
@@ -43,4 +44,6 @@ begin
   else if(v_m_flits_d)
     m_d_cstate<=1'b1;
 end
+
+assign m_d_areg_flits=flits_reg;
 endmodule

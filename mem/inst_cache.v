@@ -55,9 +55,10 @@ reg          v_inst;
 reg          local_or_OUT;
 reg   [47:0] req_msg;
 reg          inst1_inst2;
+reg          v_ic_req;
 
-           SP_BRAM_SRd  #(32,6,5)  tag_ram(.clk(clk), .we(tag_we), .re(tag_re), .a(seled_addr[8:4]), .di(state_tag_in), .do(state_tag_out));
-           SP_BRAM_SRd  #(32,128,5) data_ram(.clk(clk), .we(data_we), .re(data_re), .a(seled_addr[8:4]), .di(data_write), .do(data_read));   
+           SP_BRAM_SRd  #(32,6,5)  tag_ram(.clk(clk), .we(tag_we), .re(tag_re), .a(seled_addr[8:4]), .di(state_tag_in), .dout(state_tag_out));
+           SP_BRAM_SRd  #(32,128,5) data_ram(.clk(clk), .we(data_we), .re(data_re), .a(seled_addr[8:4]), .di(data_write), .dout(data_read));   
            
            
            
@@ -89,6 +90,8 @@ end
 always@(*)
 begin
   //default values
+    v_inst=1'b0;
+	 v_ic_req=1'b0;
     tag_we=1'b0;
     tag_re=1'b0;
     data_we=1'b0;
@@ -167,6 +170,7 @@ begin
                 local_or_OUT=1'b0;
               end      // local 0 ;remote 1; default :remote ? 
           req_msg={pc[12:11],1'b1,local_id,1'b0,instreq_cmd,5'b00000,pc};
+			 v_ic_req=1'b1;
           inst_nstate=inst_wait_rep;
         end
       inst_wait_rep:

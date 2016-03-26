@@ -53,33 +53,35 @@ output       [15:0]                     flit_out;
 output       [1:0]                      fsm_state;
 output                                  v_flit_to_req_fifo;
 
-
+//nets  of upload_datapath output 
 wire      [3:0]        inv_ids_reg_net;
 wire      [1:0]        sel_cnt_invs_net;
 wire      [15:0]       flit_out_net;
 wire                   cnt_eq_max_net;
 wire                   cnt_invs_eq_3_net;
 wire                   cnt_eq_0_net;
-wire                   dest_sel_net;
+
+//net of fsm_upload_flit output 
+wire                         dest_sel_net;
 wire                         clr_max_net;
 wire                         clr_inv_ids_net;
 wire                         clr_sel_cnt_inv_net;
 wire                         clr_sel_cnt_net;
 wire                         inc_sel_cnt_net;
-wire                         inc_sel_cnt_inv_net;
+wire                         inc_sel_cnt_invs_net;
 wire                         en_flit_max_in_net;
-
+wire                         en_inv_ids_net;
 FSM_upload_flit   req_fsm_dut (// input
                               .clk(clk),
                               .rst(rst),
                               .en_for_reg(v_flits_in),
                               .out_req_fifo_rdy(out_req_fifo_rdy_in),
-                              .cnt_invs_eq_3(cnt_invs_eq_3),
-                              .cnt_eq_max(cnt_eq_max),
+                              .cnt_invs_eq_3(cnt_invs_eq_3_net),
+                              .cnt_eq_max(cnt_eq_max_net),
                               .head_flit(head_flit),
                               .inv_ids_reg(inv_ids_reg_net),
                               .sel_cnt_invs(sel_cnt_invs_net),
-                              .sel_cnt_eq_0(sel_cnt_eq_0_net),
+                              .sel_cnt_eq_0(cnt_eq_0_net),
                               // output
                               .en_inv_ids(en_inv_ids_net),
                               .en_flit_max_in(en_flit_max_in_net),
@@ -87,7 +89,7 @@ FSM_upload_flit   req_fsm_dut (// input
                               .inc_sel_cnt(inc_sel_cnt_net),
                               .ctrl(ctrl_out),
                               .clr_max(clr_max_net),
-                              .clr_inv_ids(clr_inv_ids),
+                              .clr_inv_ids(clr_inv_ids_net),
                               .clr_sel_cnt_inv(clr_sel_cnt_inv_net),
                               .clr_sel_cnt(clr_sel_cnt_net),
                               .dest_sel(dest_sel_net),
@@ -102,10 +104,10 @@ upload_datapath   req_datapath_dut(// input
                          .clr_sel_cnt_inv(clr_sel_cnt_inv_net),
                          .clr_sel_cnt(clr_sel_cnt_net),
                          .inc_sel_cnt(inc_sel_cnt_net),
-                         .inc_sel_cnt_inv(inc_sel_cnt_inv_net),
+                         .inc_sel_cnt_inv(inc_sel_cnt_invs_net),
                          .en_flit_max_in(en_flit_max_in_net),
                          .en_for_reg(v_flits_in),
-                         .en_inv_ids(en_inv_ids),
+                         .en_inv_ids(en_inv_ids_net),
                          .inv_ids_in(inv_ids_in),
                          .dest_sel(dest_sel_net),
                          .flit_max_in(flits_max_in),

@@ -42,7 +42,7 @@ module    memory (//input
                     v_req_out,
                     head_out_req_out,
                     addr_out_req_out,
-                    data_out_req_out,
+                  //  data_out_req_out,
                     // output to OUT rep fifo
                     flit_max_rep,
                     en_flit_max_rep,
@@ -95,7 +95,7 @@ module    memory (//input
  output                    v_req_out;
  output     [15:0]         head_out_req_out;
  output     [31:0]         addr_out_req_out;
- output     [127:0]        data_out_req_out;
+ //output     [127:0]        data_out_req_out;
                            // output to OUT rep fifo
  output     [3:0]          flit_max_rep;
  output                    en_flit_max_rep; 
@@ -114,7 +114,7 @@ module    memory (//input
  wire    [127:0] data_out_net;
  wire    [5:0]   state_in_net;
  wire    [5:0]   state_out_net;
-  memory_state_data_ram(// input
+  memory_state_data_ram  mem_ram(// input
                             .clk(clk),
                             .state_we_in(state_we_net),
                             .state_re_in(state_re_net),
@@ -126,7 +126,7 @@ module    memory (//input
                           // output
                             .state_out(state_out_net),
                             .data_out(data_out_net));
-  memory_fsm(// global signals
+  memory_fsm   mem_fsm(// global signals
                .clk(clk),
                .rst(rst),
                //fsm state of rep paralle-serial port corresponding to mem 
@@ -136,7 +136,7 @@ module    memory (//input
                // fsm state of req paralle-serial port corresponding to data cache
                .d_fsm_state(d_fsm_state),
                // input from mem_ram
-               .mem_state_in(state_out_net),
+               .mem_state_out(state_out_net),
                .mem_data_in(data_out_net),
                // input from local d cache
                .v_d_req(v_d_req),
@@ -169,7 +169,7 @@ module    memory (//input
                .addr_out_local_d(addr_out_local_d),
                .data_out_local_d(data_out_local_d),
                // output to local i cahce
-               .v_rep_i(v_rep_i),
+               .v_rep_Icache(v_rep_i),
                .data_out_local_i(data_out_local_i),
                // output to OUT req fifo
                .en_inv_ids(en_inv_ids),
@@ -179,7 +179,7 @@ module    memory (//input
                .v_req_out(v_req_out),
                .head_out_req_out(head_out_req_out),
                .addr_out_req_out(addr_out_req_out),
-               .data_out_req_out(data_out_req_out),
+               //.data_out_req_out(data_out_req_out),
                // output to OUT rep fifo
                .flit_max_rep(flit_max_rep),
                .en_flit_max_rep(en_flit_max_rep),

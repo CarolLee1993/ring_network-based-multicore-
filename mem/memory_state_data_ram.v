@@ -27,8 +27,10 @@ input       [5:0]                      state_in;
 input                                  data_we_in;
 input                                  data_re_in;
 input       [127:0]                    data_in;
-input       [5:0]                      state_out;
-input       [127:0]                    data_out;
+
+//output 
+output       [5:0]                     state_out;
+output      [127:0]                    data_out;
                                
 
 /*wire       [31:0]  seled_addr;
@@ -38,7 +40,7 @@ wire       [127:0] data_read; */
            /////////////////////////////////////////////////////////////////////////
            ////////////// directory_ram   and  data_ram////////////////////////////////////
            ////////////////////////////////////////////////////////////////////////
-           SP_BRAM_SRd  #(128,6,7)  tag_ram(.clk(clk), .we(state_we_in), .re(state_re_in), .a(addr_in[10:4]), .di(state_in), .do(state_out));
-           SP_BRAM_SRd  #(128,128,7) data_ram(.clk(clk), .we(data_we_in), .re(data_re_in), .a(addr_in[10:4]), .di(data_out), .do(data_read));
+           SP_BRAM_SRd  #(128,6,7)  tag_ram(.clk(clk), .we(state_we_in), .re(state_re_in), .a(addr_in[10:4]), .di(state_in), .dout(state_out));
+           SP_BRAM_SRd  #(128,128,7) data_ram(.clk(clk), .we(data_we_in), .re(data_re_in), .a(addr_in[10:4]), .di(data_in), .dout(data_out));
 endmodule
 

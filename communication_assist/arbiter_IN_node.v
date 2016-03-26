@@ -78,28 +78,34 @@ parameter      mem_idle=2'b00;
   reg          ack_req;
   reg          ack_rep;
   reg          v_ic;
-  reg          v_dc;
-  reg          v_mem;
+  reg          v_dc_req;
+  reg          v_mem_req;
+  reg          v_dc_rep;
+  reg          v_mem_rep;
   reg [15:0]   flit_ic;
   reg [1:0]    ctrl_ic;
-  reg [15:0]   flit_dc;
-  reg [1:0]    ctrl_dc;
-  reg [15:0]   flit_mem;
-  reg [1:0]    ctrl_mem;
+  reg [15:0]   flit_dc_rep;
+  reg [1:0]    ctrl_dc_rep;
+  reg [15:0]   flit_mem_rep;
+  reg [1:0]    ctrl_mem_rep;
+  reg [15:0]   flit_dc_req;
+  reg [1:0]    ctrl_dc_req;
+  reg [15:0]   flit_mem_req;
+  reg [1:0]    ctrl_mem_req;
   reg          rep_win;
 /// fsm of arbiter_for_rep
 always@(*)
 begin
   ack_rep=1'b0;
   v_ic=1'b0;
-  v_dc=1'b0;
-  v_mem=1'b0;
+  v_dc_rep=1'b0;
+  v_mem_rep=1'b0;
   flit_ic=16'h0000;
   ctrl_ic=2'b00;
-  flit_dc=16'h0000;
-  ctrl_dc=2'b00;
-  flit_mem=16'h0000;
-  ctrl_mem=2'b00;
+  flit_dc_rep=16'h0000;
+  ctrl_dc_rep=2'b00;
+  flit_mem_rep=16'h0000;
+  ctrl_mem_rep=2'b00;
   rep_nstate=rep_state;
   rep_win=1'b0;
   case(rep_state)
@@ -116,18 +122,18 @@ begin
       else if(rep_flit_in[13]==1'b0&&rep_ctrl_in==2'b01&&in_rep_rdy&&dc_download_state_in==dc_idle)
           begin
             ack_rep=1'b1;
-            v_dc=1'b1;
-            flit_dc=rep_flit_in;
-            ctrl_dc=rep_ctrl_in;
+            v_dc_rep=1'b1;
+            flit_dc_rep=rep_flit_in;
+            ctrl_dc_rep=rep_ctrl_in;
             rep_nstate=rep_dc_downloading;
             rep_win=1'b1;
           end
       else if(rep_flit_in[13]==1'b1&&rep_ctrl_in==2'b01&&in_rep_rdy&&mem_download_state_in==mem_idle)
           begin
             ack_rep=1'b1;
-            v_mem=1'b1;
-            flit_mem=rep_flit_in;
-            ctrl_mem=rep_ctrl_in;
+            v_mem_rep=1'b1;
+            flit_mem_rep=rep_flit_in;
+            ctrl_mem_rep=rep_ctrl_in;
             rep_nstate=rep_mem_downloading;
             rep_win=1'b1;
           end
@@ -155,9 +161,9 @@ begin
                 rep_nstate=rep_idle;
               end
             ack_rep=1'b1;
-            v_dc=1'b1;
-            flit_dc=rep_flit_in;
-            ctrl_dc=rep_ctrl_in;
+            v_dc_rep=1'b1;
+            flit_dc_rep=rep_flit_in;
+            ctrl_dc_rep=rep_ctrl_in;
           end
       end
     rep_mem_downloading:
@@ -169,9 +175,9 @@ begin
                 rep_nstate=rep_idle;
               end
             ack_rep=1'b1;
-            v_mem=1'b1;
-            flit_mem=rep_flit_in;
-            ctrl_mem=rep_ctrl_in;
+            v_mem_rep=1'b1;
+            flit_mem_rep=rep_flit_in;
+            ctrl_mem_rep=rep_ctrl_in;
           end
       end
   endcase
@@ -180,12 +186,12 @@ end
 always@(*)
 begin
   ack_req=1'b0;
-  v_dc=1'b0;
-  v_mem=1'b0;
-  flit_dc=16'h0000;
-  ctrl_dc=2'b00;
-  flit_mem=16'h0000;
-  ctrl_mem=2'b00;
+  v_dc_req=1'b0;
+  v_mem_req=1'b0;
+  flit_dc_req=req_flit_in;
+  ctrl_dc_req=req_ctrl_in;
+  flit_mem_req=req_flit_in;
+  ctrl_mem_req=req_ctrl_in;
   req_nstate=req_state;
   case(req_state)
     req_idle:
@@ -195,17 +201,17 @@ begin
             if(req_flit_in[13]==1'b0&&dc_download_state_in==dc_idle)
               begin
                 ack_req=1'b1;
-                v_dc=1'b1;
-                flit_dc=req_flit_in;
-                ctrl_dc=req_ctrl_in;
+                v_dc_req=1'b1;
+                flit_dc_req=req_flit_in;
+                ctrl_dc_req=req_ctrl_in;
                 req_nstate=req_dc_downloading;
               end
             else if(req_flit_in[13]==1'b1&&mem_download_state_in==mem_idle)
               begin
                 ack_req=1'b1;
-                v_mem=1'b1;
-                flit_mem=req_flit_in;
-                ctrl_mem=req_ctrl_in;
+                v_mem_req=1'b1;
+                flit_mem_req=req_flit_in;
+                ctrl_mem_req=req_ctrl_in;
                 req_nstate=req_mem_downloading;
               end
           end
@@ -216,15 +222,15 @@ begin
           begin
             if(rep_ctrl_in==2'b11)
               begin
-                rep_nstate=rep_idle;
+                req_nstate=req_idle;
               end
-            ack_rep=1'b1;
-            v_dc=1'b1;
-            flit_dc=rep_flit_in;
-            ctrl_dc=rep_ctrl_in;
+            ack_req=1'b1;
+            v_dc_req=1'b1;
+            flit_dc_req=rep_flit_in;
+            ctrl_dc_req=rep_ctrl_in;
           end
       end     
-    rep_mem_downloading:
+    req_mem_downloading:
       begin
         if(in_req_rdy)         
             begin
@@ -233,9 +239,9 @@ begin
                 req_nstate=req_idle;
               end
             ack_req=1'b1;
-            v_mem=1'b1;
-            flit_mem=req_flit_in;
-            ctrl_mem=req_ctrl_in;
+            v_mem_req=1'b1;
+            flit_mem_req=req_flit_in;
+            ctrl_mem_req=req_ctrl_in;
             end 
       end
     endcase
@@ -256,4 +262,17 @@ begin
   else
     req_state<=req_nstate;
 end
+// it will be valid ,either req or rep valid
+assign v_dc=v_dc_req||v_dc_rep;
+//  it will be valid ,either req or rep valid
+assign v_mem=v_mem_req||v_mem_rep;
+
+assign flit_dc=v_dc_req?flit_dc_req:flit_dc_rep;
+
+assign ctrl_dc=v_dc_req?ctrl_dc_req:ctrl_dc_rep;
+
+assign flit_mem=v_mem_req?flit_mem_req:flit_mem_rep;
+
+assign ctrl_mem=v_mem_req?ctrl_mem_req:ctrl_mem_rep;
+
 endmodule 

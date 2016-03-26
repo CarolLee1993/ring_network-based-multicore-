@@ -111,19 +111,24 @@ output                        v_rep_cpu;
 
 // datapath of data cache
 wire  [5:0]     state_tag_out;
-reg   [5:0]     state_tag_in;  
+reg   [5:0]     state_tag_in1;  
 reg             data_we;
-reg             data_re;
-reg             tag_we;
-reg             tag_re;    
+reg             data_re1;
+reg             tag_we1;
+reg             tag_re1;    
 wire [127:0]    data_read;
 reg  [127:0]    data_write; 
-reg  [31:0]     seled_addr;                                                                                            
+reg  [31:0]     seled_addr;            
+
+wire            tag_we;
+wire            tag_re;
+wire            data_re;  
+wire  [5:0]     state_tag_in;                                                                              
            /////////////////////////////////////////////////////////////////////////
            //////////////tag_ram   and  data_ram////////////////////////////////////
            ////////////////////////////////////////////////////////////////////////
-           SP_BRAM_SRd  #(32,6,5)  tag_ram(.clk(clk), .we(tag_we), .re(tag_re), .a(seled_addr[8:4]), .di(state_tag_in), .do(state_tag_out));
-           SP_BRAM_SRd  #(32,128,5) data_ram(.clk(clk), .we(data_we), .re(data_re), .a(seled_addr[8:4]), .di(data_write), .do(data_read));                                                                                                     
+           SP_BRAM_SRd  #(32,6,5)  tag_ram(.clk(clk), .we(tag_we), .re(tag_re), .a(seled_addr[8:4]), .di(state_tag_in), .dout(state_tag_out));
+           SP_BRAM_SRd  #(32,128,5) data_ram(.clk(clk), .we(data_we), .re(data_re), .a(seled_addr[8:4]), .di(data_write), .dout(data_read));                                                                                                     
         
 
 ///////////////////////////////////////////////////////////
@@ -165,8 +170,8 @@ reg  [2:0]      rep_type_reg;
 reg  [3:0]      now_past;
 reg  [3:0]      inv_vector_end_reg;
 reg  [3:0]      inv_vector_working_reg;
-reg  [2:0]      cstate;
-reg  [2:0]      nstate;
+reg  [5:0]      cstate;
+reg  [5:0]      nstate;
 reg  [127:0]    cpu_wr_data;
 reg  [31:0]     data_cpu;
 reg             addr_sel;
@@ -178,14 +183,10 @@ reg  [3:0]      delayed_state_tag_in;
 reg  [3:0]      delayed_state_tag;
 reg             oneORmore;
 reg             oneORmore_reg;
-reg             v_flits_d_m_areg;
-reg  [175:0]    flits_d_m_areg;
 reg             set_req_done;
 reg             v_flits_dc_upload_req;
 reg  [47:0]     flits_dc_upload_req;
 reg             set_rep_done;
-reg             v_flits_dc_upload_rep;
-reg  [175:0]    flits_dc_upload_rep;
 reg  [4:0]      seled_exreq;
 reg             rst_llsc_flag;
 reg             en_inv_vector_end;
@@ -193,20 +194,28 @@ reg  [3:0]      inv_vector_end;
 reg             en_inv_vector_working;
 reg  [3:0]      inv_vector_working;
 reg             rst_inv_vector;
-reg  [2:0]      rep_type;
-reg             en_rep_type;
-reg             en_flit_max_rep;
-reg  [3:0]      flit_max_rep;
+reg  [2:0]      rep_type1;
+reg             en_rep_type1;
+reg             en_flit_max_rep1;
+reg  [3:0]      flit_max_rep1;
 reg             en_flit_max_req;
 reg  [1:0]      flit_max_req;
 reg  [31:0]     llsc_addr_in;
 reg             set_llsc_addr_flag;
+
+reg  [175:0]   flits_d_m_areg1;
+reg            v_flits_d_m_areg1;
+reg  [175:0]   flits_dc_upload_rep1;
+reg            v_flits_dc_upload_rep1;
+reg            done_access_cpu_addr;
 always@(*)
 begin
+  done_access_cpu_addr=1'b0;
+  data_sel=1'b0;
   data_we=1'b0;
-  data_re=1'b0;
-  tag_re=1'b0;
-  tag_we=1'b0;
+  data_re1=1'b0;
+  tag_re1=1'b0;
+  tag_we1=1'b0;
   addr_sel=1'b1;
   nstate=cstate;
   v_rep_cpu=1'b0;
@@ -215,16 +224,16 @@ begin
   en_delayed_state_tag=1'b0;
   delayed_state_tag_in=4'b0000;
   data_cpu = data_read[31:0];
-  state_tag_in=6'b000000;
+  state_tag_in1=6'b000000;
   oneORmore=1'b0;
-  v_flits_d_m_areg=1'b0;
-  flits_d_m_areg=176'h0000;
+  v_flits_d_m_areg1=1'b0;
+  flits_d_m_areg1=176'h0000;
   set_req_done=1'b0;
   v_flits_dc_upload_req=1'b0;
   flits_dc_upload_req=48'h0000;
   set_rep_done=1'b0;
-  v_flits_dc_upload_rep=1'b0;
-  flits_dc_upload_rep=176'h0000;
+  v_flits_dc_upload_rep1=1'b0;
+  flits_dc_upload_rep1=176'h0000;
   seled_exreq=exreq_cmd;
   rst_llsc_flag=1'b0;
   en_inv_vector_end=1'b0;
@@ -232,10 +241,10 @@ begin
   en_inv_vector_working=1'b0;
   inv_vector_working=4'b0000;
   rst_inv_vector=1'b0;
-  rep_type=3'b000;
-  en_rep_type=1'b0;
-  en_flit_max_rep=1'b0;
-  flit_max_rep=4'b0010;
+  rep_type1=3'b000;
+  en_rep_type1=1'b0;
+  en_flit_max_rep1=1'b0;
+  flit_max_rep1=4'b0010;
   en_flit_max_req=1'b0;
   flit_max_req=2'b10;
   llsc_addr_in=seled_addr;
@@ -282,9 +291,9 @@ begin
       end
     cpu_compare_tag:
       begin
-         tag_re=1'b1;
+         tag_re1=1'b1;
          addr_sel=1'b1;
-         data_re=1'b1;
+         data_re1=1'b1;
         if(seled_addr[12:9]==state_tag_out[3:0]&&flits_in[143:142]==2'b01)
         // flits_in[143:140] 143:r/w,0/1; 142:v,1; 141: ll/ld,0/1;  140:sc/st,0/1. 
           begin
@@ -308,9 +317,9 @@ begin
                     req_local_remote=1'b0;
                   end      // local 0 ;remote 1; default :remote ? 
               /*generate new tag*/
-              tag_we=1'b1;
+              tag_we1=1'b1;
               /*new tag*/
-              state_tag_in = {2'b01,seled_addr[12:9]};
+              state_tag_in1 = {2'b01,seled_addr[12:9]};
               en_delayed_state_tag=1'b1;
               delayed_state_tag_in=state_tag_out[3:0];
  ////            need_gen_shreq=1'b1;
@@ -324,9 +333,9 @@ begin
           begin// read miss
                nstate=cpu_gen_shreq;
                /*generate new tag*/
-               tag_we = 1'b1;
+               tag_we1= 1'b1;
                /*new tag*/
-               state_tag_in = {2'b01,seled_addr[12:9]};
+               state_tag_in1 = {2'b01,seled_addr[12:9]};
                en_delayed_state_tag=1'b1;
                delayed_state_tag_in=state_tag_out[3:0];
              //  req_type=shreq_type;
@@ -344,14 +353,14 @@ begin
                 end
               else if(state_tag_out[5:4]==2'b10) //sh  :need to be invalided  back to home!
                 begin
-                  en_rep_type=1'b1;
-                  rep_type=invrep_type;
+                  en_rep_type1=1'b1;
+                  rep_type1=invrep_type;
                   oneORmore=1'b1;
                 end
               else if(state_tag_out[5:4]==2'b11) // ex  :need to be flushed back to home!
                  begin
-                   en_rep_type=1'b1;
-                   rep_type=autoflushrep_type;
+                   en_rep_type1=1'b1;
+                   rep_type1=autoflushrep_type;
                //    oneORmore=1'b1;
                  end
           end
@@ -382,9 +391,9 @@ begin
           begin  // write miss
                nstate=cpu_gen_exreq;
                /*generate new tag*/
-               tag_we = 1'b1;
+               tag_we1 = 1'b1;
                /*new tag*/
-               state_tag_in = {2'b01,seled_addr[12:9]};
+               state_tag_in1 = {2'b01,seled_addr[12:9]};
                en_delayed_state_tag=1'b1;
                delayed_state_tag_in=state_tag_out[3:0];
            //    req_type=exreq_type;
@@ -407,14 +416,14 @@ begin
                 end
        else*/ if(state_tag_out[5:4]==2'b10) //sh  :need to be invalided  back to home!
                 begin
-                  en_rep_type=1'b1;
-                  rep_type=invrep_type;
+                  en_rep_type1=1'b1;
+                  rep_type1=invrep_type;
                   oneORmore=1'b1;
                 end
               else if(state_tag_out[5:4]==2'b11) // ex  :need to be flushed back to home!
                  begin
-                   en_rep_type=1'b1;
-                   rep_type=autoflushrep_type;
+                   en_rep_type1=1'b1;
+                   rep_type1=autoflushrep_type;
                    oneORmore=1'b1;
                  end  
           end // end of write miss 
@@ -426,8 +435,8 @@ begin
         begin
           if(req_local_remote==1'b0&&m_fsm_state==m_idle&&~req_done)
             begin
-              v_flits_d_m_areg=1'b1;
-              flits_d_m_areg={seled_addr[12:11],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr,128'hzzzz};
+              v_flits_d_m_areg1=1'b1;
+              flits_d_m_areg1={seled_addr[12:11],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr,128'hzzzz};
               set_req_done=1'b1;
             end
           if(req_local_remote==1'b1&&d_req_state==d_req_idle&&~req_done)
@@ -435,48 +444,48 @@ begin
                en_flit_max_req=1'b1;
                flit_max_req=2'b10;
                v_flits_dc_upload_req=1'b1;
-               flits_dc_upload_req={seled_addr[12:11],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr,128'hzzzz};
+               flits_dc_upload_req={seled_addr[12:11],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr};
                set_req_done=1'b1;
              end
           if(rep_local_remote==1'b0&&m_fsm_state==m_idle&&~rep_done)
             begin
               if(rep_type_reg==invrep_type)
-                flits_d_m_areg={state_tag_out[3:2],1'b0,local_id,1'b1,C2Hinvrep_cmd,5'b00000,
+                flits_d_m_areg1={state_tag_out[3:2],1'b0,local_id,1'b1,C2Hinvrep_cmd,5'b00000,
                      seled_addr[31:13],delayed_state_tag,seled_addr[8:0],128'hzzzz};  
                      //evicted addr ,so addr flits is {seled_addr[31:13],state_tag_out[12:9],seled_addr[8:0]}! 
               else if(rep_type_reg==autoflushrep_type)
-                flits_d_m_areg={state_tag_out[3:2],1'b0,local_id,1'b1,ATflurep_cmd,5'b00000,
+                flits_d_m_areg1={state_tag_out[3:2],1'b0,local_id,1'b1,ATflurep_cmd,5'b00000,
                      seled_addr[31:13],delayed_state_tag,seled_addr[8:0],data_read};
               ////////////////////////////////////////////////////////////////////////////       
               // note: if the evicted data is llsc data ,we need to reset the llsc flag!//
               ////////////////////////////////////////////////////////////////////////////
-              if({seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0]}==llsc_addr)
+              if({seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0]}==llsc_addr&&llsc_flag)
                 rst_llsc_flag=1'b1;
-              v_flits_d_m_areg=1'b1;
+              v_flits_d_m_areg1=1'b1;
               set_rep_done=1'b1;
             end
           if(rep_local_remote==1'b1&&d_rep_state==d_rep_idle&&~rep_done)
             begin
               if(rep_type_reg==invrep_type)
                 begin
-                  en_flit_max_rep=1'b1;
-                  flit_max_rep=4'b0010;
-                  flits_dc_upload_rep={state_tag_out[3:2],1'b0,local_id,1'b1,C2Hinvrep_cmd,5'b00000,
+                  en_flit_max_rep1=1'b1;
+                  flit_max_rep1=4'b0010;
+                  flits_dc_upload_rep1={state_tag_out[3:2],1'b0,local_id,1'b1,C2Hinvrep_cmd,5'b00000,
                      seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0],128'hzzzz};
                 end
               else if(rep_type_reg==autoflushrep_type)
                 begin
-                  en_flit_max_rep=1'b1;
-                  flit_max_rep=4'b1010;
-                  flits_dc_upload_rep={state_tag_out[3:2],1'b0,local_id,1'b1,ATflurep_cmd,5'b00000,
+                  en_flit_max_rep1=1'b1;
+                  flit_max_rep1=4'b1010;
+                  flits_dc_upload_rep1={state_tag_out[3:2],1'b0,local_id,1'b1,ATflurep_cmd,5'b00000,
                      seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0],data_read};
                 end
               ////////////////////////////////////////////////////////////////////////////       
               // note: if the evicted data is llsc data ,we need to reset the llsc flag!//       
-              if({seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0]}==llsc_addr)
+              if({seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0]}==llsc_addr&&llsc_flag)
                 rst_llsc_flag=1'b1;
               ////////////////////////////////////////////////////////////////////////////  
-              v_flits_dc_upload_rep=1'b1;
+              v_flits_dc_upload_rep1=1'b1;
               set_rep_done=1'b1;
             end
           if(set_req_done&&set_rep_done||req_done&&set_rep_done||set_req_done&&rep_done)
@@ -486,8 +495,8 @@ begin
         begin
           if(req_local_remote==1'b0&&m_fsm_state==m_idle&&~req_done)   
             begin
-              v_flits_d_m_areg=1'b1;
-              flits_d_m_areg={seled_addr[12:11],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr,128'hzzzz};
+              v_flits_d_m_areg1=1'b1;
+              flits_d_m_areg1={seled_addr[12:11],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr,128'hzzzz};
               set_req_done=1'b1;
             end
           if(req_local_remote==1'b1&&d_req_state==d_req_state&&~req_done)
@@ -495,7 +504,7 @@ begin
               en_flit_max_req=1'b1;
               flit_max_req=2'b10;
               v_flits_dc_upload_req=1'b1;
-              flits_dc_upload_req={seled_addr[12:11],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr,128'hzzzz}; 
+              flits_dc_upload_req={seled_addr[12:11],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr}; 
               set_req_done=1'b1;
             end
           if(set_req_done)
@@ -515,8 +524,8 @@ begin
             if(req_local_remote==1'b0&&m_fsm_state==m_idle&&~req_done)
               begin
                 set_req_done=1'b1;
-                v_flits_d_m_areg=1'b1;
-                flits_d_m_areg={state_tag_out[3:2],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr,128'hzzzz};
+                v_flits_d_m_areg1=1'b1;
+                flits_d_m_areg1={state_tag_out[3:2],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr,128'hzzzz};
               end
             if(req_local_remote==1'b1&&d_req_state==d_req_idle&&~req_done)
               begin
@@ -524,54 +533,54 @@ begin
                 flit_max_req=2'b10;
                 set_req_done=1'b1;
                 v_flits_dc_upload_req=1'b1;
-                flits_dc_upload_req={state_tag_out[3:2],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr,128'hzzzz};
+                flits_dc_upload_req={state_tag_out[3:2],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr};
               end
             if(rep_local_remote==1'b0&&m_fsm_state==m_idle&&~rep_done)
               begin
                 
               if(rep_type_reg==invrep_type)
                 begin
-                  flits_d_m_areg={state_tag_out[3:2],1'b0,local_id,1'b1,C2Hinvrep_cmd,5'b00000,
+                  flits_d_m_areg1={state_tag_out[3:2],1'b0,local_id,1'b1,C2Hinvrep_cmd,5'b00000,
                      seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0],128'hzzzz};  
                      //evicted addr ,so addr flits is {seled_addr[31:13],state_tag_out[12:9],seled_addr[8:0]}! 
                 end
               else if(rep_type_reg==autoflushrep_type)
                 begin
-                  flits_d_m_areg={state_tag_out[3:2],1'b0,local_id,1'b1,ATflurep_cmd,5'b00000,
+                  flits_d_m_areg1={state_tag_out[3:2],1'b0,local_id,1'b1,ATflurep_cmd,5'b00000,
                      seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0],data_read};
                 end
               ////////////////////////////////////////////////////////////////////////////       
               // note: if the evicted data is llsc data ,we need to reset the llsc flag!//
               ////////////////////////////////////////////////////////////////////////////
-              if({seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0]}==llsc_addr)
+              if({seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0]}==llsc_addr&&llsc_flag)
                 rst_llsc_flag=1'b1;
                 
-              v_flits_d_m_areg=1'b1;
+              v_flits_d_m_areg1=1'b1;
               set_rep_done=1'b1;
               end
             if(rep_local_remote==1'b1&&d_rep_state==d_rep_idle&&~rep_done)
               begin
               if(rep_type_reg==invrep_type)
                 begin
-                  en_flit_max_rep=1'b1;
-                  flit_max_rep=4'b0010;
-                  v_flits_dc_upload_rep={state_tag_out[3:2],1'b0,local_id,1'b1,C2Hinvrep_cmd,5'b00000,
+                  en_flit_max_rep1=1'b1;
+                  flit_max_rep1=4'b0010;
+                  flits_dc_upload_rep1={state_tag_out[3:2],1'b0,local_id,1'b1,C2Hinvrep_cmd,5'b00000,
                      seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0],128'hzzzz};
                 end
               else if(rep_type_reg==autoflushrep_type)
                 begin
-                  en_flit_max_rep=1'b1;
-                  flit_max_rep=4'b1010;
-                  v_flits_dc_upload_rep={state_tag_out[3:2],1'b0,local_id,1'b1,ATflurep_cmd,5'b00000,
+                  en_flit_max_rep1=1'b1;
+                  flit_max_rep1=4'b1010;
+                  flits_dc_upload_rep1={state_tag_out[3:2],1'b0,local_id,1'b1,ATflurep_cmd,5'b00000,
                      seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0],data_read};
                 end
               ////////////////////////////////////////////////////////////////////////////       
               // note: if the evicted data is llsc data ,we need to reset the llsc flag!//
               ////////////////////////////////////////////////////////////////////////////       
-              if({seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0]}==llsc_addr)
+              if({seled_addr[31:13],state_tag_out[3:0],seled_addr[8:0]}==llsc_addr&&llsc_flag)
                 rst_llsc_flag=1'b1; 
                  
-              v_flits_dc_upload_rep=1'b1;
+              v_flits_dc_upload_rep1=1'b1;
               set_rep_done=1'b1;
               end
             if(set_req_done&&set_rep_done||req_done&&set_rep_done||set_req_done&&rep_done)
@@ -587,8 +596,8 @@ begin
             if(req_local_remote==1'b0&&m_fsm_state==m_idle&&~req_done)
               begin
                 set_req_done=1'b1;
-                v_flits_d_m_areg=1'b1;
-                flits_d_m_areg={state_tag_out[3:2],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr,128'hzzzz};
+                v_flits_d_m_areg1=1'b1;
+                flits_d_m_areg1={state_tag_out[3:2],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr,128'hzzzz};
               end
             if(req_local_remote==1'b1&&d_req_state==d_req_idle&&~req_done)
               begin
@@ -596,7 +605,7 @@ begin
                 flit_max_req=2'b10;
                 set_req_done=1'b1;
                 v_flits_dc_upload_req=1'b1;
-                v_flits_dc_upload_req={state_tag_out[3:2],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr,128'hzzzz};
+                flits_dc_upload_req={state_tag_out[3:2],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr};
               end
             if(set_req_done)
               nstate=cpu_wait_exrep;
@@ -604,24 +613,70 @@ begin
         end 
     cpu_wait_shrep:
       begin //wait for shrep msgs from cache or home! 
-          
+          addr_sel=1'b1;
           if(v_cpu_req==1'b0&&v_flits_in==1'b1&&flits_in[137:133]==shrep_cmd)
             begin
-              tag_re=1'b1;
-              tag_we=1'b1;
-              addr_sel=1'b1;
-              state_tag_in={2'b10,state_tag_out[3:0]};
+              tag_re1=1'b1;
+              tag_we1=1'b1;  
+              state_tag_in1={2'b10,state_tag_out[3:0]};
               data_sel=1'b0;
               data_we=1'b1;
+				  nstate=cpu_idle;
+				  done_access_cpu_addr=1'b1;
             end
+			else if(v_cpu_req==1'b0&&v_flits_in==1'b1&&flits_in[137:133]==nackrep_cmd)
+			   begin
+				 if(req_local_remote==1'b0&&m_fsm_state==m_idle&&~req_done)   
+              begin
+              v_flits_d_m_areg1=1'b1;
+              flits_d_m_areg1={flits_in[140:139],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr,128'hzzzz};
+              set_req_done=1'b1;
+              end
+            if(req_local_remote==1'b1&&d_req_state==d_req_state&&~req_done)
+              begin
+                en_flit_max_req=1'b1;
+                flit_max_req=2'b10;
+                v_flits_dc_upload_req=1'b1;
+                flits_dc_upload_req={flits_in[140:139],1'b0,local_id,1'b1,shreq_cmd,5'b00000,seled_addr}; 
+                set_req_done=1'b1;
+              end
+            if(set_req_done)
+              nstate=cpu_wait_shrep;
+			  end 
       end
     cpu_wait_exrep:
       begin // wait for exreps from mem or cache 
             // or wait for sh->exrep and his invreps from the original sharers! 
           if(v_cpu_req==1'b0&&v_flits_in==1'b1)
             begin
-            tag_re=1'b1;
+            tag_re1=1'b1;
             addr_sel=1'b1;
+				
+				if(v_cpu_req==1'b0&&v_flits_in==1'b1&&flits_in[137:133]==nackrep_cmd)
+			   begin
+				  if(cpu_access_head[3:2]==2'b11&&cpu_access_head[0]==1'b0)
+                  seled_exreq=SCexreq_cmd;
+              else
+                  seled_exreq=exreq_cmd;
+                  
+            if(req_local_remote==1'b0&&m_fsm_state==m_idle&&~req_done)
+              begin
+                set_req_done=1'b1;
+                v_flits_d_m_areg1=1'b1;
+                flits_d_m_areg1={flits_in[140:139],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr,128'hzzzz};
+              end
+            if(req_local_remote==1'b1&&d_req_state==d_req_idle&&~req_done)
+              begin
+                en_flit_max_req=1'b1;
+                flit_max_req=2'b10;
+                set_req_done=1'b1;
+                v_flits_dc_upload_req=1'b1;
+                flits_dc_upload_req={flits_in[140:139],1'b0,local_id,1'b1,seled_exreq,5'b00000,seled_addr};
+              end
+             if(set_req_done)
+               nstate=cpu_wait_exrep;
+           end 
+			
             //a case: when SH_exrep arrives , some of its necessary invreps hasn't arrived.
                    //  look up the cmd code ,you will know that
                    //  head[3:0] sometimes is inv_vector ,useful when handling sh-exrep and his invreps
@@ -629,8 +684,8 @@ begin
               begin
                 inv_vector_end=flits_in[131:128];
                 en_inv_vector_end=1'b1;
-                state_tag_in={2'b01,state_tag_out[3:0]};
-                tag_we=1'b1;
+                state_tag_in1={2'b01,state_tag_out[3:0]};
+                tag_we1=1'b1;
                 data_we=1'b1;
                 data_sel=1'b1;
               end
@@ -639,11 +694,12 @@ begin
             if(flits_in[137:133]==SH_exrep_cmd&&inv_vector_working_reg==flits_in[131:128])
               begin
                 rst_inv_vector=1'b1;
-                state_tag_in={2'b11,state_tag_out[3:0]};
-                tag_we=1'b1;
+                state_tag_in1={2'b11,state_tag_out[3:0]};
+                tag_we1=1'b1;
                 data_we=1'b1;
                 data_sel=1'b1;
                 nstate=cpu_idle;
+					 done_access_cpu_addr=1'b1;
               end
             
             // a case: when a invrep arrives ,it will do sth according to the inv_vector_end 
@@ -656,9 +712,9 @@ begin
                 if(now_past==inv_vector_end_reg)
                   begin
                     rst_inv_vector=1'b1;
-                    state_tag_in={2'b11,state_tag_out[3:0]};
+                    state_tag_in1={2'b11,state_tag_out[3:0]};
                   //  data_we=1'b1;
-                    tag_we=1'b1;
+                    tag_we1=1'b1;
                     nstate=cpu_idle;
                   end
                 // current plus past invreps ,still unfinished   
@@ -674,8 +730,8 @@ begin
             // flushrep with data directly to requester ,and meanwhile flushrep without to home
             if(flits_in[137:133]==exrep_cmd)
               begin
-                state_tag_in={2'b11,state_tag_out[3:0]};
-                tag_we=1'b1;
+                state_tag_in1={2'b11,state_tag_out[3:0]};
+                tag_we1=1'b1;
                 data_we=1'b1;
                 data_sel=1'b1;
                 nstate=cpu_idle;
@@ -686,6 +742,14 @@ begin
    endcase
 end // end of always@(*)
 
+//fsm of cpu side ctrler
+always@(posedge clk)
+begin
+  if(rst)
+  cstate<=cpu_idle;
+  else
+  cstate<=nstate;
+end
 // reg for inv_vector_in form shexrep's head flit
 always@(posedge clk)
 begin
@@ -759,29 +823,52 @@ reg            rep_to_home_done;
 reg            set_rep_to_home_done;
 reg            set_rep_to_OUT_done;
 reg            fsm_rst_set_done;
+reg  [175:0]   flits_d_m_areg2;
+reg            v_flits_d_m_areg2;
+reg  [175:0]   flits_dc_upload_rep2;
+reg            v_flits_dc_upload_rep2;
+reg            en_flit_max_rep2;
+reg  [3:0]     flit_max_rep2;
+reg            tag_re2;
+reg            tag_we2;
+reg            data_re2;
+reg   [5:0]    state_tag_in2;
+reg            t_dcache_done_access;
+reg            en_rep_type2;
+reg   [2:0]    rep_type2;
+//state of network side ctrler fsm
+always@(posedge clk)
+begin 
+  if(rst)
+    network_d_state<=network_d_idle;
+  else
+    network_d_state<=network_d_nstate; 
+end	 
+
 always@(*)
 begin
   //default values
+  t_dcache_done_access=1'b0;
   network_d_nstate=network_d_state;
-  data_re=1'b0;
-  tag_re=1'b0;
-  tag_we=1'b0;
+  data_re2=1'b0;
+  tag_re2=1'b0;
+  tag_we2=1'b0;
   addr_sel=1'b0;
   rep_local_remote=1'b1;
-  en_rep_type=1'b0;
-  rep_type=wbfail_rep_type; //just for convenience
-  state_tag_in=6'b000000;
+  en_rep_type2=1'b0;
+  rep_type2=3'b000; //just for convenience
+  state_tag_in2=6'b000000;
   rst_llsc_flag=1'b0;
-  flits_d_m_areg={flits_in[140:139],1'b1,local_id,1'b0,C2Hinvrep_cmd,5'b00000,seled_addr,128'h0000};
-  v_flits_d_m_areg=1'b0;
+  flits_d_m_areg2={flits_in[140:139],1'b1,local_id,1'b0,C2Hinvrep_cmd,5'b00000,seled_addr,128'h0000};
+  v_flits_d_m_areg2=1'b0;
   set_rep_to_home_done=1'b0;
-  en_flit_max_rep=1'b1;
-  flit_max_rep=4'b0000;
-  flits_dc_upload_rep={flits_in[140:139],1'b1,local_id,1'b0,C2Hinvrep_cmd,5'b00000,seled_addr,128'h0000};
-  v_flits_dc_upload_rep=1'b0;
+  en_flit_max_rep2=1'b1;
+  flit_max_rep2=4'b0000;
+  flits_dc_upload_rep2={flits_in[140:139],1'b1,local_id,1'b0,C2Hinvrep_cmd,5'b00000,seled_addr,128'h0000};
+  v_flits_dc_upload_rep2=1'b0;
   set_rep_to_OUT_done=1'b0;
   fsm_rst_set_done=1'b0;
-  
+ // oneORmore=1'b0;
   case(network_d_state)
     network_d_idle:
       begin
@@ -793,8 +880,8 @@ begin
       end
     network_d_process_msg:
       begin
-        tag_re=1'b1;
-        data_re=1'b1;
+        tag_re2=1'b1;
+        data_re2=1'b1;
         //// wbreq///////
         if(flits_in[137:133]==wbreq_cmd&&state_tag_out[5:4]==2'b00)
           /// if this case happens ,that means the of the wbreqed data has been evicted out and back to home
@@ -805,9 +892,10 @@ begin
                 begin
                     rep_local_remote=1'b0;
                 end      // local 0 ;remote 1; default :remote ? 
-            oneORmore=1'b0;      //we only need a msg.
-            rep_type=wbfail_rep_type;
-            en_rep_type=1'b1;
+           // oneORmore=1'b0;      //we only need a msg.
+            rep_type2=wbfail_rep_type;
+            en_rep_type2=1'b1;
+				network_d_nstate=network_d_gen_rep_msg;
           end
         else if(flits_in[137:133]==wbreq_cmd&&state_tag_out[5:4]==2'b11)
           /// now we need to gen a wbrep to home and a shrep to requester.
@@ -816,13 +904,14 @@ begin
                 begin
                     rep_local_remote=1'b0;
                 end      // local 0 ;remote 1; default :remote ? 
-            oneORmore=1'b1;
-            rep_type=wbrep_type;
+          //  oneORmore=1'b1;
+            rep_type2=wbrep_type;
        //     rep_type1=shrep_type;
         //    en_rep_type1=1'b1;
-            en_rep_type=1'b1;
-            tag_we=1'b1;
-            state_tag_in={2'b10,state_tag_out[3:0]};
+            en_rep_type2=1'b1;
+            tag_we2=1'b1;
+            state_tag_in2={2'b10,state_tag_out[3:0]};
+				network_d_nstate=network_d_gen_rep_msg;
           end
           
           ////// invreq/////////
@@ -832,13 +921,14 @@ begin
                 begin
                     rep_local_remote=1'b0;
                 end      // local 0 ;remote 1; default :remote ? 
-              oneORmore=1'b1;
-              rep_type=invrep_type;
+          //    oneORmore=1'b1;
+              rep_type2=invrep_type;
        //       rep_type1=C2Cinvrep_type;
-              en_rep_type=1'b1;
+              en_rep_type2=1'b1;
        //       en_rep_type1=1'b1;
-              tag_we=1'b1;
-              state_tag_in={2'b00,state_tag_out[3:0]};
+              tag_we2=1'b1;
+              state_tag_in2={2'b00,state_tag_out[3:0]};
+				  network_d_nstate=network_d_gen_rep_msg;
             end
             
             ////////flushreq////////////
@@ -851,9 +941,10 @@ begin
                 begin
                     rep_local_remote=1'b0;
                 end      // local 0 ;remote 1; default :remote ? 
-              oneORmore=1'b0;
-              en_rep_type=1'b1;
-              rep_type=flushfail_rep_type;
+         //     oneORmore=1'b0;
+              en_rep_type2=1'b1;
+              rep_type2=flushfail_rep_type;
+				  network_d_nstate=network_d_gen_rep_msg;
             end
           else if(flits_in[137:133]==flushreq_cmd&&state_tag_out[5:4]==2'b11)
             begin
@@ -861,14 +952,15 @@ begin
                 begin
                     rep_local_remote=1'b0;
                 end      // local 0 ;remote 1; default :remote ? 
-              oneORmore=1'b1;
-              rep_type=flushrep_type;
+          //    oneORmore=1'b1;
+              rep_type2=flushrep_type;
          //     rep_type1=exrep_type;
-              en_rep_type=1'b1;
+              en_rep_type2=1'b1;
          //     en_rep_type1=1'b1;
               
-              tag_we=1'b1;
-              state_tag_in={2'b00,state_tag_out[3:0]};
+              tag_we2=1'b1;
+              state_tag_in2={2'b00,state_tag_out[3:0]};
+				  network_d_nstate=network_d_gen_rep_msg;
             end
           
           ///////////SCinvreq////////////
@@ -878,15 +970,16 @@ begin
                 begin
                     rep_local_remote=1'b0;
                 end      // local 0 ;remote 1; default :remote ? 
-              oneORmore=1'b1;
-              rep_type=invrep_type;
+         //     oneORmore=1'b1;
+              rep_type2=invrep_type;
+				  network_d_nstate=network_d_gen_rep_msg;
           //    rep_type1=C2Cinvrep_type;
-              en_rep_type=1'b1;
+              en_rep_type2=1'b1;
           //    en_rep_type1=1'b1;
               rst_llsc_flag=1'b1;/////// reset flag in this cache  
             end
       end
-    network_d_process_msg:
+    network_d_gen_rep_msg:
       begin
         if(rep_local_remote==1'b0)
           begin
@@ -897,26 +990,27 @@ begin
                  begin
                  //  en_flit_max_rep=1'b1; //to local msg don't need flit_max
                  //  flit_max_rep=4'b0010;
-                  flits_d_m_areg={flits_in[140:139],1'b1,local_id,1'b0,C2Hinvrep_cmd,5'b00000,seled_addr,128'h0000};
+                  flits_d_m_areg2={flits_in[140:139],1'b1,local_id,1'b0,C2Hinvrep_cmd,5'b00000,seled_addr,128'h0000};
                  end
               else if(rep_type_reg==flushrep_type)
                  begin
-                  flits_d_m_areg={flits_in[140:139],1'b1,local_id,1'b0,flushrep_cmd,5'b00000,seled_addr,128'h0000};
+                  flits_d_m_areg2={flits_in[140:139],1'b1,local_id,1'b0,flushrep_cmd,5'b00000,seled_addr,128'h0000};
                  end
               else if(rep_type_reg==wbrep_type)
                  begin
-                  flits_d_m_areg={flits_in[140:139],1'b1,local_id,1'b0,wbrep_cmd,5'b00000,seled_addr,data_read};
+					  data_re2=1'b1;
+                  flits_d_m_areg2={flits_in[140:139],1'b1,local_id,1'b0,wbrep_cmd,5'b00000,seled_addr,data_read};
                  end
               else if(rep_type_reg==flushfail_rep_type)
                  begin
-                  flits_d_m_areg={flits_in[140:139],1'b1,flits_in[132:131],1'b0,flushfail_rep_cmd,5'b00000,seled_addr,128'h0000};
+                  flits_d_m_areg2={flits_in[140:139],1'b1,flits_in[132:131],1'b0,flushfail_rep_cmd,5'b00000,seled_addr,128'h0000};
                  end
               else if(rep_type_reg==wbfail_rep_type)
                  begin
-                  flits_d_m_areg={flits_in[140:139],1'b1,flits_in[132:131],1'b0,wbfail_rep_cmd,5'b00000,seled_addr,128'h0000};
+                  flits_d_m_areg2={flits_in[140:139],1'b1,flits_in[132:131],1'b0,wbfail_rep_cmd,5'b00000,seled_addr,128'h0000};
                  end
                  
-                v_flits_d_m_areg=1'b1;
+                v_flits_d_m_areg2=1'b1;
                 set_rep_to_home_done=1'b1;
               end
             if(d_rep_state==d_rep_idle&&rep_to_OUT_done==1'b0)
@@ -924,30 +1018,33 @@ begin
                 //// gen to_cache msg according to rep_type
                 if(rep_type_reg==invrep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b0000;
-                  flits_dc_upload_rep={flits_in[132:131],1'b0,local_id,1'b0,C2Cinvrep_cmd,5'b00000,seled_addr,128'h0000};//only one flit
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b0000;
+                  flits_dc_upload_rep2={flits_in[132:131],1'b0,local_id,1'b0,C2Cinvrep_cmd,5'b00000,seled_addr,128'h0000};//only one flit
                  end
               else if(rep_type_reg==flushrep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b1000;
-                  flits_dc_upload_rep={flits_in[132:131],1'b0,local_id,1'b0,exrep_cmd,5'b00000,data_read,32'h0000};  // 9flits
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b1000;
+						 data_re2=1'b1;
+                  flits_dc_upload_rep2={flits_in[132:131],1'b0,local_id,1'b0,exrep_cmd,5'b00000,data_read,32'h0000};  // 9flits
                  end
               else if(rep_type_reg==wbrep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b1000;
-                  flits_dc_upload_rep={flits_in[132:131],1'b0,local_id,1'b0,shrep_cmd,5'b00000,data_read,32'h0000};  // 9flits
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b1000;
+						 data_re2=1'b1;
+                  flits_dc_upload_rep2={flits_in[132:131],1'b0,local_id,1'b0,shrep_cmd,5'b00000,data_read,32'h0000};  // 9flits
                  end
                  
-                  v_flits_dc_upload_rep=1'b1;
+                  v_flits_dc_upload_rep2=1'b1;
                   set_rep_to_OUT_done=1'b1;
               end
             if(set_rep_to_home_done&&set_rep_to_OUT_done||rep_to_home_done&&set_rep_to_OUT_done||set_rep_to_home_done&&rep_to_OUT_done)
               begin
                 fsm_rst_set_done=1'b1;
                 network_d_nstate=network_d_idle;
+					 t_dcache_done_access=1'b1;
               end
           end
         else   /// both reps will be sent to OUT rep fifo via dcache_upload_rep  ,so one by one.
@@ -957,37 +1054,38 @@ begin
                 /// gen to_home msg according to rep_type
                 if(rep_type_reg==invrep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b0010;
-                  flits_dc_upload_rep={flits_in[140:139],1'b1,local_id,1'b0,C2Hinvrep_cmd,5'b00000,seled_addr,128'h0000};  // 3 flits
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b0010;
+                  flits_dc_upload_rep2={flits_in[140:139],1'b1,local_id,1'b0,C2Hinvrep_cmd,5'b00000,seled_addr,128'h0000};  // 3 flits
                  end
               else if(rep_type_reg==flushrep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b0010;
-                  flits_dc_upload_rep={flits_in[140:139],1'b1,local_id,1'b0,flushrep_cmd,5'b00000,seled_addr,128'h0000};  // 3 flits
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b0010;
+                  flits_dc_upload_rep2={flits_in[140:139],1'b1,local_id,1'b0,flushrep_cmd,5'b00000,seled_addr,128'h0000};  // 3 flits
                  end
               else if(rep_type_reg==wbrep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b1010;
-                  flits_dc_upload_rep={flits_in[140:139],1'b1,local_id,1'b0,wbrep_cmd,5'b00000,seled_addr,data_read};   //11 flits
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b1010;
+						 data_re2=1'b1;
+                  flits_dc_upload_rep2={flits_in[140:139],1'b1,local_id,1'b0,wbrep_cmd,5'b00000,seled_addr,data_read};   //11 flits
                  end
               else if(rep_type_reg==flushfail_rep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b0010;
-                  flits_dc_upload_rep={flits_in[140:139],1'b1,flits_in[132:131],1'b0,flushfail_rep_cmd,5'b00000,seled_addr,128'h0000};  // 3 flits
-                  network_d_nstate=network_d_idle;
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b0010;
+                  flits_dc_upload_rep2={flits_in[140:139],1'b1,flits_in[132:131],1'b0,flushfail_rep_cmd,5'b00000,seled_addr,128'h0000};  // 3 flits
+               //   network_d_nstate=network_d_idle;
                  end
               else if(rep_type_reg==wbfail_rep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b0010;
-                  flits_dc_upload_rep={flits_in[140:139],1'b1,flits_in[132:131],1'b0,wbfail_rep_cmd,5'b00000,seled_addr,128'h0000};  // 3 flits
-                  network_d_nstate=network_d_idle;
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b0010;
+                  flits_dc_upload_rep2={flits_in[140:139],1'b1,flits_in[132:131],1'b0,wbfail_rep_cmd,5'b00000,seled_addr,128'h0000};  // 3 flits
+                //  network_d_nstate=network_d_idle;
                  end
-                 v_flits_dc_upload_rep=1'b1;
+                 v_flits_dc_upload_rep2=1'b1;
                  set_rep_to_home_done=1'b1;
               end
             else if(d_rep_state==d_rep_idle)
@@ -995,26 +1093,28 @@ begin
                 /// gen to_home msg according to rep_type
                 if(rep_type_reg==invrep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b0000;
-                  flits_dc_upload_rep={flits_in[132:131],1'b0,local_id,1'b0,C2Cinvrep_cmd,5'b00000,seled_addr,128'h0000};//only one flit
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b0000;
+                  flits_dc_upload_rep2={flits_in[132:131],1'b0,local_id,1'b0,C2Cinvrep_cmd,5'b00000,seled_addr,128'h0000};//only one flit
                  end
               else if(rep_type_reg==flushrep_type)
                  begin
-                   en_flit_max_rep=1'b1;
-                   flit_max_rep=4'b1000;
-                  flits_dc_upload_rep={flits_in[132:131],1'b0,local_id,1'b0,exrep_cmd,5'b00000,data_read,32'h0000};  // 9 flits
+                   en_flit_max_rep2=1'b1;
+                   flit_max_rep2=4'b1000;
+						 data_re2=1'b1;
+                  flits_dc_upload_rep2={flits_in[132:131],1'b0,local_id,1'b0,exrep_cmd,5'b00000,data_read,32'h0000};  // 9 flits
                  end
               else if(rep_type_reg==wbrep_type)
                  begin
-                  en_flit_max_rep=1'b1;
-                  flit_max_rep=4'b1000;
-                  flits_dc_upload_rep={flits_in[132:131],1'b0,local_id,1'b0,shrep_cmd,5'b00000,data_read,32'h0000};  // 9 flits
+                  en_flit_max_rep2=1'b1;
+                  flit_max_rep2=4'b1000;
+						data_re2=1'b1;
+                  flits_dc_upload_rep2={flits_in[132:131],1'b0,local_id,1'b0,shrep_cmd,5'b00000,data_read,32'h0000};  // 9 flits
                  end
                  
                  network_d_nstate=network_d_idle;
-                 v_flits_dc_upload_rep=1'b1;
-                 
+                 v_flits_dc_upload_rep2=1'b1;
+                 t_dcache_done_access=1'b1;
               end
           end
       end
@@ -1041,6 +1141,10 @@ begin
     rep_to_home_done<=1'b1;
 end 
 
+wire   [2:0] rep_type;
+wire         en_rep_type;
+assign   rep_type=en_rep_type1? rep_type1:rep_type2;
+assign   en_rep_type=en_rep_type1||en_rep_type2;
 // reg for rep_type
 always@(posedge clk)
 begin
@@ -1084,5 +1188,29 @@ begin
     end
 end
 
+// try to figure out multiple assignment in always block
+wire  [175:0]   flits_d_m_areg;
+wire            v_flits_d_m_areg;
+wire  [175:0]   flits_dc_upload_rep;
+wire            v_flits_dc_upload_rep;
+assign    v_flits_d_m_areg=v_flits_d_m_areg1||v_flits_d_m_areg2;
+assign    v_flits_dc_upload_rep=v_flits_dc_upload_rep1||v_flits_dc_upload_rep2;
+assign    flits_d_m_areg=v_flits_d_m_areg1?flits_d_m_areg1:flits_d_m_areg2;
+assign    flits_dc_upload_rep=v_flits_dc_upload_rep1?flits_dc_upload_rep1:flits_dc_upload_rep2;
+/*wire                   en_flit_max_rep1;
+wire    [3:0]          flit_max_rep1;
+wire                   en_flit_max_rep2;
+wire    [3:0]          flit_max_rep2; */
+assign    en_flit_max_rep=en_flit_max_rep1||en_flit_max_rep2;
+assign    flit_max_rep=en_flit_max_rep1?flit_max_rep1:flit_max_rep2;
+
+assign   state_tag_in=tag_we1?state_tag_in1:state_tag_in2;
+assign   tag_we=tag_we1||tag_we2;
+assign   tag_re=tag_re1||tag_re2;
+assign   data_re=data_re1||data_re2;
+assign   dcache_done_access=t_dcache_done_access||done_access_cpu_addr;
 endmodule 
-                 
+ /*wire            tag_we;
+wire            tag_re;
+wire            data_re;  
+wire  [5:0]     state_tag_in; */             

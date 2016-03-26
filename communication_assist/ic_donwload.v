@@ -231,7 +231,7 @@ begin
   if(rst||fsm_rst)
     cnt<=3'b000;
   else if(inc_cnt)
-    cnt<=cnt+1;
+    cnt<=cnt+3'b001;
 end
 
 endmodule

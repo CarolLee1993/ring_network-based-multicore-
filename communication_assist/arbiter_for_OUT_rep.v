@@ -42,11 +42,12 @@ parameter        nackrep_cmd=5'b10101;
 parameter        SCflurep_cmd=5'b11100;
 reg  [2:0]  nstate;
 reg  [2:0]  state;
-reg         priority;
+reg         priority1;
 reg         ack_OUT_rep;
 reg         ack_dc_rep;
 reg         ack_mem_rep;
 reg         update_priority;
+reg [1:0]   select;
 /// nstate and output function
 always@(*)
 begin
@@ -55,13 +56,14 @@ begin
   ack_dc_rep=1'b0;
   ack_mem_rep=1'b0;
   update_priority=1'b0;
+  select=2'b00;
   case(state)
     arbiter_idle:
       begin
         if({v_dc_rep,v_mem_rep}==2'b11)
           begin
             update_priority=1'b1;
-            if(priority)
+            if(priority1)
               begin
                 nstate=dc_uploading;
               end
@@ -85,6 +87,7 @@ begin
           begin
             ack_OUT_rep=1'b1;
             ack_dc_rep=1'b1;
+				select=2'b01;
             if(dc_rep_ctrl==2'b11||dc_rep_ctrl==2'b01&&(dc_rep_flit[9:5]==SCflurep_cmd||dc_rep_flit[9:5]==nackrep_cmd))
               begin
                 nstate=arbiter_idle;
@@ -97,6 +100,7 @@ begin
           begin
             ack_OUT_rep=1'b1;
             ack_mem_rep=1'b1;
+				select=2'b10;
             if(mem_rep_ctrl==2'b11||mem_rep_ctrl==2'b01&&(mem_rep_flit[9:5]==SCflurep_cmd||mem_rep_flit[9:5]==nackrep_cmd))
               begin
                 nstate=arbiter_idle;
@@ -118,8 +122,8 @@ end
 always@(posedge clk)
 begin
   if(rst)
-    priority<=3'b001;
+    priority1<=1'b0;
   else if(update_priority)
-    priority<=~priority;
+    priority1<=~priority1;
 end
 endmodule           

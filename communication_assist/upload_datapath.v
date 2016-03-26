@@ -43,8 +43,8 @@ module   upload_datapath(// input
    ///////////////////Datapath Unit///////////////////////////////////////////////////
    input                                 clk;
    input                                 rst;
-   input           [3:0]                 inv_ids_in;   // invreq vector used for generating every invreqs
-   input                                 en_for_reg;   // enable for all kinds of flits regs
+ //  input           [3:0]                 inv_ids_in;   // invreq vector used for generating every invreqs
+//   input                                 en_for_reg;   // enable for all kinds of flits regs
    input           [15:0]                head_flit;
    input           [15:0]                addrhi;
    input           [15:0]                addrlo;
@@ -108,7 +108,7 @@ begin
   if(rst||clr_sel_cnt)
     sel_cnt<=4'b0000;
   else if(inc_sel_cnt)
-    sel_cnt<=sel_cnt+1;
+    sel_cnt<=sel_cnt+4'b0001;
 end
 
 // selection counter for invreqs_vector generating different invreqs with different dest id
@@ -118,7 +118,7 @@ begin
   if(rst||clr_sel_cnt_inv)
     sel_cnt_invs<=2'b00;
   else if(inc_sel_cnt_inv)
-    sel_cnt_invs<=sel_cnt_invs+1;
+    sel_cnt_invs<=sel_cnt_invs+2'b01;
 end
 
 wire     [1:0]    sel_cnt_invs_out;
@@ -206,4 +206,5 @@ begin
  //   end 
 end
 
+assign flit_out=flit_seled_out;
 endmodule

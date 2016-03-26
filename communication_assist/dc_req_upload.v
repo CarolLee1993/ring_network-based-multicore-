@@ -9,6 +9,7 @@ module   dc_req_upload(//input
                           //output
                           dc_flit_out,
                           v_dc_flit_out,
+								  dc_ctrl_out,
                           dc_req_upload_state
                           );
 //input
@@ -20,6 +21,7 @@ input                         req_fifo_rdy;
 //output
 output      [15:0]             dc_flit_out;
 output                         v_dc_flit_out;
+output      [1:0]              dc_ctrl_out;
 output                         dc_req_upload_state;
 
 //parameter 
@@ -85,13 +87,30 @@ begin
     dc_req_flits<=dc_flits_req;
 end
 reg  [15:0]  dc_flit_out;
+
+reg  [1:0]  dc_ctrl_out;
 always@(*)
 begin
   case(sel_cnt)
-    2'b00:dc_flit_out=dc_req_flits[47:32];
-    2'b01:dc_flit_out=dc_req_flits[31:16];
-    2'b10:dc_flit_out=dc_req_flits[15:0];
-    default:dc_flit_out=dc_req_flits[47:32];
+    2'b00:
+	 begin
+	   dc_flit_out=dc_req_flits[47:32];
+		dc_ctrl_out=2'b01;
+		end
+    2'b01:
+	 begin
+	   dc_flit_out=dc_req_flits[31:16];
+		dc_ctrl_out=2'b10;
+		end
+    2'b10:
+	 begin
+	   dc_flit_out=dc_req_flits[15:0];
+		dc_ctrl_out=2'b11;
+		end
+    default:begin
+	           dc_flit_out=dc_req_flits[47:32];
+				  dc_ctrl_out=2'b00;
+				end
   endcase
 end
 
@@ -101,7 +120,7 @@ begin
   if(rst||fsm_rst)
     sel_cnt<=2'b00;
   else if(inc_cnt)
-    sel_cnt<=sel_cnt+1;
+    sel_cnt<=sel_cnt+2'b01;
 end
 
 endmodule

@@ -34,7 +34,7 @@ output                               ack_OUT_req;
 output                               ack_ic_req;
 output                               ack_dc_req;
 output                               ack_mem_req;
-output   [1:0]                       select; // select 1/3
+output   [2:0]                       select; // select 1/3
 /// parameter for fsm state
 parameter         arbiter_idle=4'b0001;
 parameter         ic_uploading=4'b0010;
@@ -144,7 +144,7 @@ begin
             if(mem_req_ctrl==2'b11)
               nstate=arbiter_idle;
             ack_mem_req=1'b1;
-            select=3'b010;
+            select=3'b001;
             ack_OUT_req=1'b1;
           end
       end

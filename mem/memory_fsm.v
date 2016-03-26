@@ -48,7 +48,7 @@
                addr_out_local_d,
                data_out_local_d,
                // output to local i cahce
-               v_rep_i,
+               v_rep_Icache,
                data_out_local_i,
                // output to OUT req fifo
                en_inv_ids,
@@ -153,12 +153,12 @@ parameter       m_req_idle=1'b0;
  output     [31:0]         addr_out_local_d;
  output     [127:0]        data_out_local_d;
                            // output to local i cahce
- output                    v_rep_i;
+ output                    v_rep_Icache;
  output     [127:0]        data_out_local_i;
                            // output to OUT req fifo
  output                    en_inv_ids;
  output     [3:0]          inv_ids_in;
- output     [1:0]          flit_max_req;
+ output     [3:0]          flit_max_req;
  output                    en_flit_max_req;          
  output                    v_req_out;
  output     [15:0]         head_out_req_out;
@@ -221,23 +221,24 @@ reg           v_rep_out;
 reg           v_req_d;
 reg           v_req_out;
 reg           v_rep_Icache;
-reg  [4:0]    thead;     
+//reg  [4:0]    thead;    
+/////////////   I have forget what function it is ,soI think I should take enough notes to some strange things
 reg           en_temp_rep_head_flit;
 reg  [15:0]   temp_rep_head_flit_in;
 reg           en_temp_req_head_flit;
 reg  [15:0]   temp_req_head_flit_in; 
-reg  [3:0]    flit_max;
-reg           en_flit_max; 
+//reg  [3:0]    flit_max;
+//reg           en_flit_max; 
 reg  [3:0]    flit_max_rep;
 reg           en_flit_max_rep; 
-reg  [1:0]    flit_max_req;
+reg  [3:0]    flit_max_req;
 reg           en_flit_max_req;  
 reg           t_req_head_sel;
 reg           t_rep_head_sel;
 reg           id_sel_out;
 reg           rep_local_remote;
 reg           req_local_remote;
-reg  [3:0]    cmd_type;
+reg  [4:0]    cmd_type;
 reg           set_req_done;
 reg           set_rep_done;
 reg           rst_rep_type;
@@ -253,6 +254,7 @@ reg   [1:0]    rstate;
 
 wire  [15:0]   seled_head;
 wire  [31:0]   seled_addr;
+wire  [127:0]  seled_data;
 wire  [127:0]  data_read;
 
 assign data_read=mem_data_in;
@@ -292,16 +294,24 @@ begin
     v_req_d=1'b0;
     v_req_out=1'b0;
     v_rep_Icache=1'b0;
-    thead=5'b00000;
+ //   thead=5'b00000;
+    t_req_head_sel=1'b0;
+    t_rep_head_sel=1'b0;
     en_temp_rep_head_flit=1'b0;
     temp_rep_head_flit_in =16'h0000;
     en_temp_req_head_flit=1'b0;
     temp_req_head_flit_in=16'h0000; 
-    flit_max=4'b0000;
-    en_flit_max=1'b0;  
+  //  flit_max=4'b0000;
+  //  en_flit_max=1'b0;  
+    flit_max_req=4'b0000;
+    en_flit_max_req=1'b0;
+	 flit_max_rep=4'b0000;
+    en_flit_max_rep=1'b0;
     id_sel_out=1'b0;
     set_req_done=1'b0;
     set_rep_done=1'b0;
+	 rst_rep_type=1'b0;
+	 rst_req_type=1'b0;
   case(rstate)
     m_idle:
     begin
@@ -316,7 +326,7 @@ begin
           en_temp_rep_head_flit=1'b1;
           en_temp_req_head_flit=1'b1;
         end
-      if(v_INfifos==1'b1)
+     else  if(v_INfifos==1'b1)
         begin
           addr_sel=1'b1;
           data_sel=1'b1;
@@ -366,8 +376,8 @@ begin
           case(seled_head[12:11])
             2'b00:m_state_in={m_state_out[5:1],1'b0};
             2'b01:m_state_in={m_state_out[5:2],1'b0,m_state_out[0]};
-            2'b01:m_state_in={m_state_out[5:3],1'b0,m_state_out[1:0]};
-            2'b01:m_state_in={m_state_out[5:4],1'b0,m_state_out[2:0]};
+            2'b10:m_state_in={m_state_out[5:3],1'b0,m_state_out[1:0]};
+            2'b11:m_state_in={m_state_out[5:4],1'b0,m_state_out[2:0]};
             default:m_state_in=m_state_out;
           endcase
           rep_type=shrep_type;
@@ -444,8 +454,8 @@ begin
           case(seled_head[12:11])
             2'b00:m_state_in=6'b100001;
             2'b01:m_state_in=6'b100010;
-            2'b01:m_state_in=6'b100100;
-            2'b01:m_state_in=6'b101000;
+            2'b10:m_state_in=6'b100100;
+            2'b11:m_state_in=6'b101000;
             default:m_state_in=6'b100001;
           endcase
           rep_type=exrep_type;
@@ -499,8 +509,8 @@ begin
               case(seled_head[12:11])
                 2'b00:m_state_in={2'b10,m_state_out[3:1],1'b0};
                 2'b01:m_state_in={2'b10,m_state_out[3:2],1'b0,m_state_out[0]};
-                2'b01:m_state_in={2'b10,m_state_out[3],1'b0,m_state_out[1:0]};
-                2'b01:m_state_in={2'b10,1'b0,m_state_out[2:0]};
+                2'b10:m_state_in={2'b10,m_state_out[3],1'b0,m_state_out[1:0]};
+                2'b11:m_state_in={2'b10,1'b0,m_state_out[2:0]};
                 default:m_state_in={2'b10,m_state_out[3:1],1'b0};
               endcase
             end
@@ -604,6 +614,8 @@ begin
      //process invreps
       if(seled_head[9:5]==C2Cinvrep_cmd&&(m_state_out[5:4]==2'b10))
         begin
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           // some invreps haven't come  
@@ -613,8 +625,8 @@ begin
               case(seled_head[12:11])
                 2'b00:m_state_in={2'b10,m_state_out[3:1],1'b0};
                 2'b01:m_state_in={2'b10,m_state_out[3:2],1'b0,m_state_out[0]};
-                2'b01:m_state_in={2'b10,m_state_out[3],1'b0,m_state_out[1:0]};
-                2'b01:m_state_in={2'b10,1'b0,m_state_out[2:0]};
+                2'b10:m_state_in={2'b10,m_state_out[3],1'b0,m_state_out[1:0]};
+                2'b11:m_state_in={2'b10,1'b0,m_state_out[2:0]};
                 default:m_state_in={2'b10,m_state_out[3:1],1'b0};
               endcase
             end
@@ -647,14 +659,16 @@ begin
         /// process (auto)invreps
       if(seled_head[9:5]==C2Hinvrep_cmd&&(m_state_out[5:4]==2'b00))
         begin
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           en_m_state_in=1'b1;
           case(seled_head[12:11])
               2'b00:m_state_in={2'b00,m_state_out[3:1],1'b0};
               2'b01:m_state_in={2'b00,m_state_out[3:2],1'b0,m_state_out[0]};
-              2'b01:m_state_in={2'b00,m_state_out[3],1'b0,m_state_out[1:0]};
-              2'b01:m_state_in={2'b00,1'b0,m_state_out[2:0]};
+              2'b10:m_state_in={2'b00,m_state_out[3],1'b0,m_state_out[1:0]};
+              2'b11:m_state_in={2'b00,1'b0,m_state_out[2:0]};
             default:m_state_in={2'b00,m_state_out[3:1],1'b0};
           endcase
         end
@@ -663,6 +677,8 @@ begin
         /// process wbrep
       if(seled_head[9:5]==wbrep_cmd&&(m_state_out[5:4]==2'b11))
         begin
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           en_m_state_in=1'b1;
@@ -670,8 +686,8 @@ begin
           case(seled_head[12:11])
               2'b00:m_state_in={2'b00,m_state_out[3:1],1'b1};
               2'b01:m_state_in={2'b00,m_state_out[3:2],1'b1,m_state_out[0]};
-              2'b01:m_state_in={2'b00,m_state_out[3],1'b1,m_state_out[1:0]};
-              2'b01:m_state_in={2'b00,1'b1,m_state_out[2:0]};
+              2'b10:m_state_in={2'b00,m_state_out[3],1'b1,m_state_out[1:0]};
+              2'b11:m_state_in={2'b00,1'b1,m_state_out[2:0]};
             default:m_state_in={2'b00,m_state_out[3:1],1'b1};
           endcase
         end
@@ -680,6 +696,8 @@ begin
         /// process AUTOflushrep
       if(seled_head[9:5]==ATflurep_cmd&&(m_state_out[5:4]==2'b01))
         begin
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           en_m_state_in=1'b1;
@@ -691,6 +709,8 @@ begin
         /// process flushrep  
       if(seled_head[9:5]==flushrep_cmd&&(m_state_out[5:4]==2'b11))
         begin
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           en_m_state_in=1'b1;
@@ -716,6 +736,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         if(rep_type_reg==shrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
           begin
@@ -725,6 +747,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
           
         /////////////////////////////////////
@@ -737,6 +761,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         if(rep_type_reg==nackrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
           begin
@@ -746,6 +772,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
+		      rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
           
         //////////////////////////////////////
@@ -758,6 +786,8 @@ begin
             msg={temp_rep_head_flit,seled_addr,128'h0000};
             nstate=m_idle;
             mem_access_done=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         if(req_type_reg==wbreq_type&&req_local_remote&&m_req_fsm_state==m_req_idle)
           begin
@@ -767,6 +797,8 @@ begin
             msg={temp_req_head_flit,seled_addr,128'h0000};
             nstate=m_idle;
             mem_access_done=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         
         ///////////////////////////////////////
@@ -779,6 +811,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         if(rep_type_reg==instrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
           begin
@@ -788,6 +822,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
+				rst_rep_type=1'b1;
+			   rst_req_type=1'b1;
           end
       end
     
@@ -805,6 +841,8 @@ begin
                 msg={temp_rep_head_flit,data_read,32'h00000000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
             if(rep_type_reg==exrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
               begin
@@ -814,6 +852,8 @@ begin
                 msg={temp_rep_head_flit,data_read,32'h00000000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
           
           
@@ -827,6 +867,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
+				rst_rep_type=1'b1;
+			   rst_req_type=1'b1;
           end
         if(rep_type_reg==nackrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
           begin
@@ -836,6 +878,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
           
           
@@ -849,6 +893,8 @@ begin
                 msg={temp_req_head_flit,seled_addr,128'h0000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
             if(req_type_reg==flushreq_type&&req_local_remote&&m_req_fsm_state==m_req_idle)
               begin
@@ -858,6 +904,8 @@ begin
                 msg={temp_req_head_flit,seled_addr,128'h0000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end  
           
             //////////////////////////////////////////////////
@@ -870,6 +918,8 @@ begin
                 msg={temp_rep_head_flit,data_read,32'h00000000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
                 end
             if(rep_type_reg==SCflurep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
               begin
@@ -879,6 +929,8 @@ begin
                 msg={temp_rep_head_flit,data_read,32'h00000000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
           end
         if(oneORmore==1'b1)
@@ -906,11 +958,11 @@ begin
             /// gen SCinvreq or invreq
             if((req_type_reg==invreq_type||req_type_reg==SCinvreq_type)&&~req_local_remote&&d_fsm_state==d_idle)
               begin
-                if(req_type==invreq_type)
+        /*        if(req_type==invreq_type)
                   thead[4:0]=invreq_cmd;
                 else
                   thead[4:0]=SCinvreq_cmd;
-                ///
+          */      ///
          //       flit_max=4'b0010;
          //       en_flit_max=1'b1;
                 v_req_d=1'b1;
@@ -919,11 +971,11 @@ begin
                 end
             if((req_type_reg==invreq_type||req_type_reg==SCinvreq_type)&&req_local_remote&&m_req_fsm_state==m_req_idle)
               begin
-                if(req_type==invreq_type)
+           /*     if(req_type==invreq_type)
                   thead[4:0]=invreq_cmd;
                 else
                   thead[4:0]=SCinvreq_cmd;
-                ///
+             */   ///
                 flit_max_req=4'b0010;
                 en_flit_max_req=1'b1;
                 v_req_out=1'b1;
@@ -934,12 +986,23 @@ begin
               begin
                 nstate=m_idle;
                 mem_access_done=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
           end 
       end
   endcase
   end
   
+  
+// fsm_memory_ctrl
+always@(posedge clk)
+begin
+ if(rst)
+   rstate<=m_idle;
+ else
+	rstate<=nstate;
+end
 always@(posedge clk)
 begin
   if(rst)
@@ -1006,7 +1069,7 @@ assign   {head_out_local_d,addr_out_local_d,data_out_local_d}=msg;
 // output to local inst cache
 assign   data_out_local_i=msg[159:32];
 // output to mem_OUT rep fifo
-assign   {head_out_req_out,addr_out_req_out,data_out_req_out}=msg;
+assign   {head_out_rep_out,addr_out_rep_out,data_out_rep_out}=msg;
 // output to mem_OUT req fifo
 assign   {head_out_req_out,addr_out_req_out}=msg[175:128]; // msg[127:0] is useless for req msg
 endmodule

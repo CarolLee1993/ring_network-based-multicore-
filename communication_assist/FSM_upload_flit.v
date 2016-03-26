@@ -2,7 +2,7 @@
 // engineer: ZhaiShaoMin
 // module name:FSM_unload_flit
 //transfer flit of msg from cache or mem to network local out fifos 
-//                         parallel msg  to  serial flits stream  for transfering on rin network
+//                         parallel msg  to  serial flits stream  for transfering on ring network
 module    FSM_upload_flit(// input
                               clk,
                               rst,
@@ -44,7 +44,7 @@ module    FSM_upload_flit(// input
    output                                en_flit_max_in;
    output                                inc_sel_cnt_invs;
    output                                inc_sel_cnt;
-   output                                ctrl;
+   output        [1:0]                   ctrl;
    output                                clr_max;
    output                                clr_inv_ids;
    output                                clr_sel_cnt_inv;
@@ -90,6 +90,7 @@ begin
     upload_rstate<=upload_nstate;
 end
 
+assign fsm_state_out=upload_rstate;
 
 reg          en_inv_ids;
 reg          en_flit_max_in;
@@ -101,7 +102,7 @@ reg          clr_inv_ids;
 reg          clr_sel_cnt_inv;
 reg          clr_sel_cnt;
 reg          dest_sel;
-
+reg          en_flit_out;
 
 // next state function
 always@(*)
@@ -118,7 +119,7 @@ begin
   clr_sel_cnt_inv=1'b0;
   clr_sel_cnt=1'b0;
   dest_sel=1'b0;
-  
+  en_flit_out=1'b0;
   case(upload_rstate)
     upload_idle:
       begin
@@ -140,6 +141,7 @@ begin
           end
         else 
           begin
+			   en_flit_out=1'b1;
             if(inv_ids_reg[sel_cnt_invs]==1'b0)
               inc_sel_cnt_invs=1'b1;
             else
@@ -203,6 +205,7 @@ begin
           end
         else
           begin
+			   en_flit_out=1'b1;
             if(cnt_eq_max)
               begin
                 upload_nstate=upload_idle;

@@ -9,7 +9,7 @@ module   m_download(//input
                     mem_done_access,
                     //output
                     v_m_download,
-                    m_donwload_flits,
+                    m_download_flits,
                     m_download_state
                     );
 //input
@@ -22,7 +22,7 @@ input                    mem_done_access;
 
 //output
 output                    v_m_download;
-output    [175:0]         m_donwload_flits;
+output    [175:0]         m_download_flits;
 output    [1:0]           m_download_state;
 
 //
@@ -229,6 +229,6 @@ begin
   if(rst||fsm_rst)
     cnt<=3'b000;
   else if(inc_cnt)
-    cnt<=cnt+1;
+    cnt<=cnt+3'b001;
 end
 endmodule

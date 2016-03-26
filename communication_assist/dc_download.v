@@ -225,6 +225,6 @@ begin
   if(rst||fsm_rst)
     cnt<=4'b0000;
   else if(inc_cnt)
-    cnt<=cnt+1;
+    cnt<=cnt+4'b0001;
 end
 endmodule

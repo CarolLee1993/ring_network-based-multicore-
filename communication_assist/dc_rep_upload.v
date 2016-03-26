@@ -11,6 +11,7 @@ module   dc_rep_upload(//input
                           //output
                           dc_flit_out,
                           v_dc_flit_out,
+								  dc_ctrl_out,
                           dc_rep_upload_state
                           );
 //input
@@ -24,6 +25,7 @@ input                          rep_fifo_rdy;
                           //output
 output        [15:0]            dc_flit_out;
 output                          v_dc_flit_out;
+output       [1:0]              dc_ctrl_out;
 output                          dc_rep_upload_state;
 
 //parameter 
@@ -40,7 +42,7 @@ reg          next;
 reg          en_flits_in;
 reg          inc_cnt;
 reg  [3:0]   flits_max_reg;
-
+reg  [1:0]   dc_ctrl_out;
 assign dc_rep_upload_state=dc_rep_state;
 always@(*)
 begin
@@ -51,7 +53,7 @@ begin
   fsm_rst=1'b0;
   en_flits_in=1'b0;
   next=1'b0;
-  
+  dc_ctrl_out=2'b00;
   case(dc_rep_state)
     dc_rep_upload_idle:
        begin
@@ -66,7 +68,14 @@ begin
          if(rep_fifo_rdy)
            begin
              if(sel_cnt==flits_max_reg)
+				  begin
                fsm_rst=1'b1;
+					dc_ctrl_out=2'b11;
+					end
+				else if(sel_cnt==3'b000)
+				    dc_ctrl_out=2'b01;
+				else 	 
+				    dc_ctrl_out=2'b10;
              inc_cnt=1'b1;
              v_dc_flit_out=1'b1;
            end
@@ -124,7 +133,7 @@ begin
   if(rst||fsm_rst)
     sel_cnt<=4'b0000;
   else if(inc_cnt)
-    sel_cnt<=sel_cnt+1;
+    sel_cnt<=sel_cnt+4'b0001;
 end
 
 endmodule
