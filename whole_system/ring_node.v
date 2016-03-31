@@ -60,6 +60,10 @@ wire      [3:0]              used_slots_pass_rep;
 wire      [15:0]             flit_out;
 wire      [1:0]              ctrl_out;
 wire      [1:0]              dest_fifo_out;
+wire                         req_rdy;
+wire                         rep_rdy;
+wire                         OUT_req_rdy;
+wire                         OUT_rep_rdy;
 
 //commu assist output
                          // output
@@ -161,7 +165,7 @@ wire                v_mem;
 wire     [3:0]      mem_head;
 wire     [31:0]     mem_addr;
 wire     [31:0]     mem_data; 
-network_interface     NI (
+network_interface     my_NI (
                       //input    
                          .clk(clk),                           //global clock
                          .rst(rst),                           //global reset
@@ -200,7 +204,7 @@ network_interface     NI (
                          );
                          
 
-commu_assist            CA(//input
+commu_assist         my_CA(//input
                            .clk(clk),
                            .rst(rst),
                            // I/O between arbiter and IN fifos
@@ -237,7 +241,7 @@ commu_assist            CA(//input
                            .v_flits_2_ic_req(local_or_OUT), // saying I'm a valid req flits to OUT req fifo
                            .flits_2_ic_req(req_msg),   //  req flits output to OUT req fifo
                            // to local mem
-                           .v_req_2_i_m_areg(!local_or_OUT),  // saying I'm a valid req flits to local home(memory)
+                           .v_req_i_m_areg(!local_or_OUT),  // saying I'm a valid req flits to local home(memory)
                            .req_i_m_areg(req_msg[31:0]),     //  req flits output to local home
                            // output
                            .v_inst_rep(v_inst_rep), // saying that is a valid rep data back to pipeline
@@ -264,7 +268,7 @@ commu_assist            CA(//input
                            .ack_i_m_donwload(v_i_m_areg),    //similar as above  
                            .mem_access_done(mem_access_done),
                            
-                           .mem_ic_donwload(data_out_local_i),     // flits from mem to ic_download
+                           .mem_ic_download(data_out_local_i),     // flits from mem to ic_download
                            .v_mem_ic_download(v_rep_i),   //  flit above is valid 
                            .mem_m_d_areg({head_out_local_d,addr_out_local_d,data_out_local_d}),        // flits from mem to m_d_areg
                            .v_mem_m_d_areg(v_req_d||v_rep_d),      // it's a valid flits to m_d_areg 
@@ -312,7 +316,7 @@ commu_assist            CA(//input
 
                            
 dcache_cpu_network_ctrler       
-                    DCNC( //global ctrl signals
+                     my_dc( //global ctrl signals
                          .clk(clk),
                          .rst(rst),
                       //input from arbiter_for_dcache
@@ -356,7 +360,7 @@ dcache_cpu_network_ctrler
 //assign   req_msg_local=local_or_OUT?48'hzzzz:req_msg;
 //assign   req_msg_OUT=local_or_OUT?req_msg:48'hzzzz;   
 // here   should be inst cache ,but by now i haven't written it
-inst_cache      IC(//input
+inst_cache      my_ic(//input
                     .clk(clk),
                     .rst(rst),
                     // from pc
@@ -378,7 +382,7 @@ inst_cache      IC(//input
 
                     
                     
-  memory          (//input
+  memory      my_mem(//input
                     .clk(clk),
                     .rst(rst),
                     //fsm state of rep paralle-serial port corresponding to mem 
@@ -419,7 +423,7 @@ inst_cache      IC(//input
                     .v_req_out(v_req_out),
                     .head_out_req_out(head_out_req_out),
                     .addr_out_req_out(addr_out_req_out),
-                    .data_out_req_out(data_out_req_out),
+                   // .data_out_req_out(data_out_req_out),
                     // output to OUT rep fifo
                     .flit_max_rep(flit_max_rep_m),
                     .en_flit_max_rep(en_flit_max_rep_m),
@@ -432,7 +436,7 @@ inst_cache      IC(//input
                     );
 
                   
-core           (//input
+core           my_core(//input
                 .clk(clk),
                 .rst(rst),
                 .v_inst(v_inst),

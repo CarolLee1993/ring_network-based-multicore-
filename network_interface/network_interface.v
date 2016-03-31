@@ -57,7 +57,8 @@ parameter        C2Cinvrep_cmd=5'b11011;
 parameter        nackrep_cmd=5'b10101;
 parameter        flushfail_rep_cmd=5'b10110;
 parameter        wbfail_rep_cmd=5'b10111;
-
+parameter        local_id=2'b00;
+parameter        next_id=local_id+1;
                        
     //input          
       input                   clk;                          
@@ -126,7 +127,10 @@ reg        [17:0]    temp_flit_out;
 // arbietr for deq
 wire   [3:0]            select;  
 
-
+wire        next_pass_req;
+wire        next_pass_rep;
+wire        next_local_req;
+wire        next_local_rep;
 //arbiter for enq
 wire           [15:0]  flit2pass_req;   // seled flit output to pass req 
 wire           [1:0]   ctrl2pass_req;   // seled ctrl output to pass req
@@ -149,8 +153,8 @@ assign                  OUT_rep_rdy=!out_rep_full;
 // to previous node  refer to below notes
 assign          en_local_req=!in_req_full;      
 assign          en_local_rep=!in_rep_full;   
-assign          en_pass_req=!pass_req_full;     // from next node  //local_in_req fifo in next node says that it can receive
-assign          en_pass_req=!pass_req_full;     // refer to notes below   
+//assign          en_pass_req=!pass_req_full;     // from next node  //local_in_req fifo in next node says that it can receive
+//assign          en_pass_rep=!pass_rep_full;     // refer to notes below   
 
 // output to arbiter_IN_node to tell it it's ready for them to deq flit from IN_local fifos
 assign                   req_rdy=!IN_local_req_empty;
@@ -158,7 +162,11 @@ assign                   rep_rdy=!IN_local_rep_empty;
 
 //wires just for convenience      
 assign flit_out=temp_flit_out[15:0];
-assign ctrl_out=temp_flit_out[18:16];
+assign ctrl_out=temp_flit_out[17:16];
+
+wire   next_or_not;
+assign  next_or_not=(flit_out[15:14]==next_id)?1'b1:1'b0;
+assign  dest_fifo_out={next_or_not,flit_out[9]};
 
 // figure out which fifo output its flit to next node
 always@(*)
@@ -268,7 +276,7 @@ my_scfifo   OUT_rep_fifo(
     ///////////////////////////////////////////////////////////////////////////////////////////
                  
      
-arbiter_4_deq ( 
+arbiter_4_deq   my_arbiter_4_deq( 
              //input
                        .clk(clk),
                        .rst(rst),
@@ -302,7 +310,7 @@ arbiter_4_deq (
     ////////////////////write to pass rep/req fifo ,IN_local rep/req fifo       ///////////////
     /////////////////////////////////////////////////////////////////////////////////////////// 
    
-arbiter_4_enq ( // input 
+arbiter_4_enq   my_arbiter_4_enq( // input 
                        .flit(flit_in),
                        .ctrl(ctrl_in),
                        .en_dest_fifo(|ctrl_in),

@@ -175,7 +175,7 @@ MUXn_4_1 #(0) local_pass_rep_dest_seled_rdy_dut(.mux_in0(en_local_req),
                                                 .mux_in1(en_local_rep),
                                                 .mux_in2(en_pass_req),
                                                 .mux_in3(en_pass_rep),
-                                                .mux_sel(pass_red_temp_dest_id),
+                                                .mux_sel(pass_rep_temp_dest_id),
                                                 .mux_out(local_pass_rep_dest_seled_rdy));
                                                 
    MUXn_4_1 #(0) OUT_req_dest_seled_rdy_dut    (.mux_in0(en_local_req),
@@ -258,7 +258,7 @@ MUXn_4_1 #(0) local_pass_rep_dest_seled_rdy_dut(.mux_in0(en_local_req),
  reg   en_priority_1;
  reg   en_priority_2;
  reg   en_priority_3;
- reg   en_priority_4;
+ //reg   en_priority_4;
  
  
  wire  [3:0] en;
@@ -282,6 +282,10 @@ assign temp_priority_3=priority_3;
  
  always@( * )
   begin
+    local_req_go=1'b0;
+	 local_rep_go=1'b0;
+	 pass_req_go=1'b0;
+	 pass_rep_go=1'b0;
     if(next_local_rep==1'b0&&~next_pass_rep_busy&&~OUT_rep_busy&&(!OUT_local_rep_empty))
       begin
         if(used_slots_pass_rep<=4'b0100&&OUT_rep_length_code==2'b11)
@@ -297,6 +301,7 @@ assign temp_priority_3=priority_3;
           //  out local rep not empty, unused slots in pass rep of next node more than 1
           local_rep_go=1'b1;
       end
+		
     if(!OUT_local_rep_empty&&next_local_rep&&~next_in_rep_busy&&~OUT_rep_busy)
       local_rep_go=1'b1;
     if(!OUT_local_req_empty&&~next_local_req&&~next_pass_req_busy&&~OUT_req_busy)
@@ -316,7 +321,7 @@ assign temp_priority_3=priority_3;
       pass_req_go=1'b1;
     if(!pass_req_empty&&~next_pass_req&&~next_in_req_busy&&~local_pass_req_busy)  
       pass_req_go=1'b1;
-   end  
+  end  
 
 // arbitrate dest fifos for ready and safe source fifos
 
@@ -345,8 +350,18 @@ begin
 end
 
 ///  arbitrate local rep fifo and pass rep fifo
-always@(local_rep_go or pass_rep_go or next_local_rep or  next_pass_rep)
+always@(*)
 begin
+  //default values
+  set_next_pass_rep_busy=1'b0;
+  set_local_pass_rep_busy=1'b0;
+  set_pass_rep_dest_id_in=2'b00;
+  set_pass_rep_dest_id=1'b0;
+  set_next_in_rep_busy=1'b0;
+  set_OUT_rep_busy=1'b0;
+  set_OUT_rep_dest_id_in=2'b00;
+  set_OUT_rep_dest_id=1'b0;
+  update_arbiter1=1'b0;
   /////////////////////////////////////////////////////////////////////////////////
   ///////NOTE: the  order if block looks like 4 bits                   ////////////
   //////      {local_rep_go,pass_rep_go,next_local_rep,next_pass_rep}   ///////////
@@ -434,8 +449,18 @@ end
  
  
  //// arbitrate local req fifo and pass req fifo
-always@(local_req_go or pass_req_go or next_local_req or  next_pass_req)
+always@(*)
 begin
+     //default values
+      set_next_in_req_busy=1'b0;
+      set_OUT_req_busy=1'b0;
+      set_OUT_req_dest_id_in=2'b00;
+      set_OUT_req_dest_id=1'b0;
+      set_next_pass_req_busy=1'b0;
+      set_local_pass_req_busy=1'b0;
+      set_pass_req_dest_id_in=2'b00;
+      set_pass_req_dest_id=1'b0;
+		update_arbiter2=1'b0;
   /////////////////////////////////////////////////////////////////////////////////
   ///////NOTE: the  order if block looks like 4 bits                   ////////////
   //////      {local_req_go,pass_req_go,next_local_req,next_pass_req}   ///////////
@@ -532,7 +557,7 @@ end
    en_priority_1=0;
    en_priority_2=0;
    en_priority_3=0;
-   en_priority_4=0;
+  // en_priority_4=0;
    select=4'b0000;
    //behave logic judgement
    if(en[3:0]==4'b1111)
