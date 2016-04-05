@@ -306,5 +306,5 @@ wire  [29:0]   ret_addr_out_temp;
 assign ret_addr_out_temp=(ret_addr_out_src==2'b00)?recover_push_addr:
                     (ret_addr_out_src==2'b01)?pointer_rd_ras:
                     (ret_addr_out_src==2'b10)?pointerP1_rd_ras:30'hzzzzzzzz;
-assign  ret_addr_out={ret_addr_out_temp,,2'b00};
+assign  ret_addr_out={ret_addr_out_temp,2'b00};
 endmodule

@@ -614,8 +614,8 @@ begin
      //process invreps
       if(seled_head[9:5]==C2Cinvrep_cmd&&(m_state_out[5:4]==2'b10))
         begin
-		      rst_rep_type=1'b1;
-			    rst_req_type=1'b1;
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           // some invreps haven't come  
@@ -659,8 +659,8 @@ begin
         /// process (auto)invreps
       if(seled_head[9:5]==C2Hinvrep_cmd&&(m_state_out[5:4]==2'b00))
         begin
-		      rst_rep_type=1'b1;
-			    rst_req_type=1'b1;
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           en_m_state_in=1'b1;
@@ -677,8 +677,8 @@ begin
         /// process wbrep
       if(seled_head[9:5]==wbrep_cmd&&(m_state_out[5:4]==2'b11))
         begin
-		      rst_rep_type=1'b1;
-			    rst_req_type=1'b1;
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           en_m_state_in=1'b1;
@@ -696,8 +696,8 @@ begin
         /// process AUTOflushrep
       if(seled_head[9:5]==ATflurep_cmd&&(m_state_out[5:4]==2'b01))
         begin
-		      rst_rep_type=1'b1;
-			    rst_req_type=1'b1;
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           en_m_state_in=1'b1;
@@ -709,8 +709,8 @@ begin
         /// process flushrep  
       if(seled_head[9:5]==flushrep_cmd&&(m_state_out[5:4]==2'b11))
         begin
-		      rst_rep_type=1'b1;
-			    rst_req_type=1'b1;
+		    rst_rep_type=1'b1;
+			 rst_req_type=1'b1;
           nstate=m_idle;
           mem_access_done=1'b1;
           en_m_state_in=1'b1;
@@ -736,8 +736,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
-				    rst_rep_type=1'b1;
-				    rst_req_type=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         if(rep_type_reg==shrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
           begin
@@ -747,8 +747,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
-				    rst_rep_type=1'b1;
-				    rst_req_type=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
           
         /////////////////////////////////////
@@ -761,8 +761,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
-				    rst_rep_type=1'b1;
-				    rst_req_type=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         if(rep_type_reg==nackrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
           begin
@@ -772,8 +772,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
-		        rst_rep_type=1'b1;
-				    rst_req_type=1'b1;
+		      rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
           
         //////////////////////////////////////
@@ -786,8 +786,8 @@ begin
             msg={temp_rep_head_flit,seled_addr,128'h0000};
             nstate=m_idle;
             mem_access_done=1'b1;
-				    rst_rep_type=1'b1;
-				    rst_req_type=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         if(req_type_reg==wbreq_type&&req_local_remote&&m_req_fsm_state==m_req_idle)
           begin
@@ -797,8 +797,8 @@ begin
             msg={temp_req_head_flit,seled_addr,128'h0000};
             nstate=m_idle;
             mem_access_done=1'b1;
-				    rst_rep_type=1'b1;
-				    rst_req_type=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         
         ///////////////////////////////////////
@@ -811,8 +811,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
-				    rst_rep_type=1'b1;
-				    rst_req_type=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
         if(rep_type_reg==instrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
           begin
@@ -822,8 +822,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
-				    rst_rep_type=1'b1;
-			      rst_req_type=1'b1;
+				rst_rep_type=1'b1;
+			   rst_req_type=1'b1;
           end
       end
     
@@ -841,8 +841,8 @@ begin
                 msg={temp_rep_head_flit,data_read,32'h00000000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
-					      rst_rep_type=1'b1;
-					      rst_req_type=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
             if(rep_type_reg==exrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
               begin
@@ -852,8 +852,8 @@ begin
                 msg={temp_rep_head_flit,data_read,32'h00000000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
-					      rst_rep_type=1'b1;
-					      rst_req_type=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
           
           
@@ -867,8 +867,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
-				    rst_rep_type=1'b1;
-			      rst_req_type=1'b1;
+				rst_rep_type=1'b1;
+			   rst_req_type=1'b1;
           end
         if(rep_type_reg==nackrep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
           begin
@@ -878,8 +878,8 @@ begin
             msg={temp_rep_head_flit,data_read,32'h00000000};
             nstate=m_idle;
             mem_access_done=1'b1;
-				    rst_rep_type=1'b1;
-				    rst_req_type=1'b1;
+				rst_rep_type=1'b1;
+				rst_req_type=1'b1;
           end
           
           
@@ -893,8 +893,8 @@ begin
                 msg={temp_req_head_flit,seled_addr,128'h0000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
-					      rst_rep_type=1'b1;
-					      rst_req_type=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
             if(req_type_reg==flushreq_type&&req_local_remote&&m_req_fsm_state==m_req_idle)
               begin
@@ -904,8 +904,8 @@ begin
                 msg={temp_req_head_flit,seled_addr,128'h0000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
-					      rst_rep_type=1'b1;
-					      rst_req_type=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end  
           
             //////////////////////////////////////////////////
@@ -918,8 +918,8 @@ begin
                 msg={temp_rep_head_flit,data_read,32'h00000000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
-					      rst_rep_type=1'b1;
-					      rst_req_type=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
                 end
             if(rep_type_reg==SCflurep_type&&rep_local_remote&&m_rep_fsm_state==m_rep_idle)
               begin
@@ -929,8 +929,8 @@ begin
                 msg={temp_rep_head_flit,data_read,32'h00000000};
                 nstate=m_idle;
                 mem_access_done=1'b1;
-					      rst_rep_type=1'b1;
-					      rst_req_type=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
           end
         if(oneORmore==1'b1)
@@ -986,8 +986,8 @@ begin
               begin
                 nstate=m_idle;
                 mem_access_done=1'b1;
-					      rst_rep_type=1'b1;
-					      rst_req_type=1'b1;
+					 rst_rep_type=1'b1;
+					 rst_req_type=1'b1;
               end
           end 
       end

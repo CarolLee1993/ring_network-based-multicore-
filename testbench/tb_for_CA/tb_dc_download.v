@@ -86,8 +86,8 @@ integer logfile;
 
 // Initialize Inputs
         initial begin
-            clk = 0;
-            rst = 0;
+            clk = 1'b0;
+            rst = 1'b0;
             IN_flit_dc=16'h1234;
             v_IN_flit_dc=1'b0;
             In_flit_ctrl_dc=2'b00;
