@@ -1,0 +1,43 @@
+note of a primer on memory consistency and coherency!
+3.8 OPTIMIZED SC IMPLEMENTATIONS WITH CACHE COHERENCE
+   1.Non-Binding Prefetching
+    ---Importantly, in no case does a non-binding prefetch change the state of a register or data in block B.
+    ---The effect of the non-binding prefetch is limited to within the “cache-coherent memory system”,
+    ---making the effect of non-binding prefetches on the memory consistency model to be the functional equivalent of a no-op. 
+    ---So long as the loads and stores are performed in program order, 
+    ---it does not matter in what order coherence permissions are obtained.
+    Conclusion
+    ---Implementations may do non-binding prefetches without affecting the memory consistency model.
+    ---This is useful for both internal cache prefetching (e.g., stream buffers) and more aggressive cores.
+    
+   2.Speculative Cores
+    ---a prefetch (Gets) caused by a load after a speculative branch will load a value to a register ,while it won't make mistakes into 
+    ---architecture states because of the commit state ,which is important to filter the speculative stores.
+   
+   3.Dynamically Scheduled Cores
+    ---However, in the context of a multicore processor,
+    ---dynamic scheduling introduces a new issue: memory consistency speculation. Consider a core
+    ---that wishes to dynamically reorder the execution of two loads, L1 and L2 (e.g., because L2’s address
+    ---is computed before L1’s address). Many cores will speculatively execute L2 before L1, and they are
+    ---predicting that this reordering is not visible to other cores, which would violate SC
+    
+    Here are two solutions to verify the speculating SC
+       First ,after the core speculatively executes L2, but before it commits L2,
+    ---the core could check that the speculatively accessed block has not left the cache. 
+    ---So long as the block remains in the cache, its value could not have changed between the load’s execution and its commit.
+    ---To perform this check, the core tracks the address loaded by L2 and compares it to blocks evicted and to incoming coherence requests.
+    ---An incoming GetM indicates that another core could observe L2 out of order, and this GetM would imply a misspeculation
+    ---and squash the speculative execution.
+       The second checking technique is to replay each speculative load when the core is ready to
+    ---commit the load . If the value loaded at commit does not equal the value that was previously
+    ---loaded speculatively, then the prediction was incorrect. In the example, if the replayed load value of
+    ---L2 is not the same as the originally loaded value of L2, then the load–load reordering has resulted
+    ---in an observably different execution and the speculative execution must be squashed.
+    
+    Comparision to these two solutions 
+      Hardware complexity:
+      
+      Bandwidth overhead:
+      
+      result of comparision:
+      
