@@ -36,8 +36,18 @@ note of a primer on memory consistency and coherency!
     
     Comparision to these two solutions 
       Hardware complexity:
+               first one : since there are always a Ld queue to trace the flight loads and every load entry has a ex bit to remember whether
+                           the corresponding load has actually access the cache. So it's the responsibility for the entries with ex bit on to snoop 
+                           the addr of evicted blocks, addrs of incoming coherency requests during their lifetime,thus needing a full associate search
+                           logic in the Ld queue.
+               second one: less complexity on hardward,but heavy bandwidths will occur to cache, also delay the life time of many load in the Ld queue,
+                           which apprently requires more number of entries in the queue.
+      bandwidth comparision:
+              first one:   normally,having few effect on bandwidth 
+              second one : heavy traffic on cache!
+      result of comparision: the second solution seems to be reasonable for designer to select!
+   4.Multithreading
+      one chanllenge is ensuring that a thread T1 cannot read a value written by another thread T2 on the same core before the store has been
+      made "visible" to threads on other cores .Thus .load should get the value from the local cache instead of non_local_id's Store_buffer.
       
-      Bandwidth overhead:
-      
-      result of comparision:
       
