@@ -49,5 +49,106 @@ note of a primer on memory consistency and coherency!
    4.Multithreading
       one chanllenge is ensuring that a thread T1 cannot read a value written by another thread T2 on the same core before the store has been
       made "visible" to threads on other cores .Thus .load should get the value from the local cache instead of non_local_id's Store_buffer.
-      
-      
+3.9 ATOMIC OPERATIONS WITH SC
+     An even more optimized implementation of RMWs could allow more time between when
+   the load part and store part perform, without violating atomicity. Consider the case where the block
+   is in a read-only state in the cache. The load part of the RMW can speculatively perform immediately,
+   while the cache controller issues a coherence request to upgrade the block’s state to read–write.
+   When the block is then obtained in read–write state, the write part of the RMW performs. As long
+   as the core can maintain the illusion of atomicity, this implementation is correct. To check whether
+   the illusion of atomicity is maintained, the core must check whether the loaded block is evicted
+   from the cache between the load part and the store part; this speculation support is the same as that
+   needed for detecting mis-speculation in SC .
+   
+ CASE StuDy: MIPS 10000
+      Importantly, the eviction of a cache block—due to a coherence invalidation or to make room
+   for another block—that contains a load’s address in the address queue squashes the load and all
+   subsequent instructions, which then re-execute. Thus, when a load finally commits, the loaded
+   block was continuously in the cache between when it executed and when it commits, so it must get
+   the same value as if it executed at commit.
+
+
+4.4 IMPLEMENTING TSO/x86
+
+     Finally, multithreading introduces a subtle write buffer issue for TSO. TSO write buffers are
+   logically private to each thread context (virtual core). Thus, on a multithreaded core, one thread
+   context should never bypass from the write buffer of another thread context. This logical separation
+   can be implemented with per-thread-context write buffers or, more commonly, by using a shared write 
+   buffer with entries tagged by thread-context identifiers that permit bypassing only when tags match.
+   
+   4.5 ATOMIC INSTRUCTIONS AND FENCES WITH TSO
+   
+   4.5.1 Atomic Instructions
+     To understand the implementation of atomic RMWs in TSO, we consider the RMW as a
+   load immediately followed by a store. The load part of the RMW cannot pass earlier loads due to
+   TSO’s ordering rules. It might at first appear that the load part of the RMW could pass earlier
+   stores in the write buffer, but this is not legal. If the load part of the RMW passes an earlier store,
+   then the store part of the RMW would also have to pass the earlier store because the RMW is
+   an atomic pair. But because stores are not allowed to pass each other in TSO, the load part of the
+   RMW cannot pass an earlier store either.
+     These ordering constraints on RMWs impact the implementation. Because the load part of
+   the RMW cannot be performed until earlier stores have been ordered (i.e., exited the write buffer),
+   the atomic RMW effectively drains the write buffer before it can perform the load part of the
+   RMW. Furthermore, to ensure that the store part can be ordered immediately after the load part,
+   the load part requires read–write coherence permissions, not just the read permissions that suffice
+   for normal loads. Lastly, to guarantee atomicity for the RMW, the cache controller may not relinquish
+   coherence permission to the block between the load and the store.
+     
+       More optimized implementations of RMWs are possible. For example, the write buffer does
+   not need to be drained as long as (a) every entry already in the write buffer has read–write permission
+   in the cache and maintains the read–write permission in the cache until the RMW commits and (b) the core
+   performs MIPS R10000-style checking of load speculation (Section 3.8). Logically,
+   all of the earlier stores and loads would then commit as a unit (sometimes called a “chunk”)
+   immediately before the RMW.
+   
+   4.5.2 FENCEs
+       For systems that support TSO, the FENCE thus prohibits a load from bypassing an earlier store.
+       
+       
+?????? question
+   DIFFERENCE between TSO of X86 model,in which each core sees its own store immediately, 
+   and when any other cores see a store, all other cores see it. This property is
+   called write atomicity in the next chapter (Section 5.5)
+   and SC model in Multithread core ,which is that loads of thread 1 can't bypass the store value of thread 2,3,4... 
+   
+   because TSO model support bypass store value to load ,which results in a load can see a store value written by same virtual core 
+   before another virtual cores can !
+   
+   5.1.1 Opportunities to Reorder Memory Operations
+   
+     If proper operation does not depend on ordering among many loads and stores, perhaps one
+   could obtain higher performance by relaxing the order among them, since loads and stores are typically
+   much more frequent than lock acquires and releases. This is what relaxed or weak models do.
+   
+   5.1.2 Opportunities to Exploit Reordering
+   
+    5.1.2.1 Non-FIFO, Coalescing Write Buffer
+       Recall that TSO enables the use of a FIFO write buffer, which improves performance by hiding
+   some or all of the latency of committed stores.
+       Although a FIFO write buffer improves performance, an even more optimized design would use a non-FIFO 
+   write buffer that permits coalescing of writes (i.e., two stores that are not consecutive in program order 
+   can write to the same entry in the write buffer). However, a non-FIFO coalescing write buffer violates TSO 
+   because TSO requires stores to appear in program order. Our example relaxed model allows stores to coalesce 
+   in a non-FIFO write buffer, so long as the stores have not been separated by a FENCE.
+   
+  5.1.2.2 Simpler Support for Core Speculation
+     Unlike MIPS 10000,parallelism. In a system with a relaxed memory consistency model, a core can execute loads
+   out of program order without having to compare the addresses of these loads to the addresses of incoming coherence
+   requests. These loads are not speculative with respect to the relaxed consistency model (although
+   they may be speculative with respect to, say, a branch prediction or earlier stores by the same thread
+   to the same address).
+
+ ????????? 5.1.2.3 Coupling Consistency and Coherence
+ 
+     ??? why relax model can open the coherency box to gain performance???
+     
+      We previously advocated decoupling consistency and coherence to manage intellectual complexity.
+   Alternatively, relaxed models can provide better performance than strong models by “opening the
+   coherence box.” For example, an implementation might allow a subset of cores to load the new value
+   from a store even as the rest of the cores can still load the old value, temporarily breaking coherence’s
+   single-writer–multiple-reader invariant. This situation can occur, for example, when two thread
+   contexts logically share a per-core write buffer or when two cores share an L1 data cache. However,
+   “opening the coherence box” incurs considerable intellectual and verification complexity, bringing
+   to mind the Greek myth about Pandora’s box. As we will discuss in Section 5.6, IBM Power permits
+   the above optimizations, but first we explore relaxed models with the coherence box sealed tightly.
+   
