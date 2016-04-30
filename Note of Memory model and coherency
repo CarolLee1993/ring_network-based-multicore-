@@ -152,3 +152,71 @@ note of a primer on memory consistency and coherency!
    to mind the Greek myth about Pandora’s box. As we will discuss in Section 5.6, IBM Power permits
    the above optimizations, but first we explore relaxed models with the coherence box sealed tightly.
    
+7.1 INTRODUCTION TO SNOOPING
+ 
+ As for request!
+ 
+    The ordered broadcast ensures that every coherence controller observes the
+  same series of coherence requests in the same order, i.e., that there is a total order of coherence
+  requests. Since a total order subsumes all per-block orders, this total order guarantees that all coherence
+  controllers can correctly update a cache block’s state.
+    Consider the example in Table 7.3 which involves two blocks A and B; each block
+  is requested exactly once and so the system trivially observes per-block request orders. Yet because
+  cores C1 and C2 observe the GetM and GetS requests out-of-order, this execution violates both the
+  SC and TSO memory consistency models.
+    Requiring that broadcast coherence requests be observed in a total order has important implications
+  for the interconnection network used to implement traditional snooping protocols. Because
+  many coherence controllers may simultaneously attempt to issue coherence requests, the interconnection
+  network must serialize these requests into some total order. However the network determines
+  this order, this mechanism becomes known as the protocol’s serialization (ordering) point.
+  This arbitration logic acts as the serialization point because it effectively determines
+  the order in which requests appear on the bus.
+  
+  As for response!
+  
+    There are few constraints on response messages. They can travel on a separate interconnection
+  network that does not need to support broadcast nor have any ordering requirements.
+  Because response messages carry data and are thus much longer than requests, there are significant
+  benefits to being able to send them on a simpler, lower-cost network. Notably, response messages
+  do not affect the serialization of coherence transactions. Logically, a coherence transaction—which
+  consists of a broadcast request and a unicast response—occurs when the request is ordered, regardless
+  of when the response arrives at the requestor. The time interval between when the request appears
+  on the bus and when the response arrives at the requestor does affect the implementation of the
+  protocol (e.g., during this gap, are other controllers allowed to request this block? If so, how does
+  the requestor respond?), but it does not affect the serialization of the transaction.
+  
+  
+  7.2.2 Simple Snooping System Model: Atomic Requests, Atomic Transactions  (refer to page 110)
+  
+  Atomic Requests and Atomic Transactions. 
+  
+      The Atomic Requests : 
+       property states that a coherence request is ordered in the same cycle that it is issued.
+  This property eliminates the possibility of a block’s state changing—due to another core’s coherence request—between
+  when a request is issued and when it is ordered. 
+  
+      The Atomic Transactions:
+       property states that coherence transactions are atomic in that a subsequent request for the same block may not
+  appear on the bus until after the first transaction completes (i.e., until after the response has appeared on the bus).
+  
+    Because coherence involves operations on a single block, whether or not the system permits subsequent requests to 
+  different blocks does not impact the protocol.
+  
+  The system model’s atomicity properties simplify cache miss handling in two ways. First,
+the Atomic Requests property ensures that when a cache controller seeks to upgrade permissions to a
+block—to go from I to S, I to M, or S to M—it can issue a request without worrying that another
+core’s request might be ordered ahead of its own. Thus, the cache controller can transition immediately
+to state ISD, IMD, or SMD, as appropriate, to wait for a data response. Similarly, the Atomic
+Transactions property ensures that no subsequent requests for a block will occur until after the current
+transaction completes, eliminating the need to handle requests from other cores while in one
+of these transient states.
+
+
+7.2.3 Baseline Snooping System Model: Non-Atomic Requests,Atomic Transactions
+
+ Non-atomic requests arise from a number of implementation optimizations, but most commonly due to inserting a message
+ queue (or even a single buffer) between the cache controller and the bus.
+ 
+ Relaxing the Atomic Requests property introduces numerous situations in which a cache controller observes a request from another controller
+ on the bus in between issuing its coherence request and observing its own coherence request on
+ the bus.
