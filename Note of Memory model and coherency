@@ -272,9 +272,60 @@ should revert to state X when it receives a NoData message (and move to state Io
 data message).
 
 7.3 ADDING THE EXCLUSIVE STATE
+   A cache controller may silently change a cache block’s state from E to M without issuing a coherence request.
+ 7.3.1 Motivation
+  The Exclusive state is used in almost all commercial coherence protocols because it optimizes a
+common case. Compared to an MSI protocol, a MESI protocol offers an important advantage in
+the situation in which a core first reads a block and then subsequently writes it.
 
+ 7.3.2 Getting to the Exclusive State
+  Before explaining how the protocol works, we must first figure out how the issuer of a GetS determines
+that there are no other sharers and thus that it is safe to go directly to state E instead of state
+S. There are at least two possible solutions:
+     **Adding a wired-OR “sharer” signal to bus:
+     **Maintaining extra state at the LLC:an alternative solution is for the LLC to distinguish
+     between states I (no sharers) and S (one or more sharers), which was not needed for the
+     MSI protocols. In state I, the memory controller responds with data that is specially labeled
+as being Exclusive; in state S, the memory controller responds with data that is unlabeled.
+However, maintaining the S state exactly is challenging, since the LLC must detect when
+the last sharer relinquishes its copy. First, this requires that a cache controller issues a PutS
+message when it evicts a block in state S. Second, the memory controller must maintain
+a count of the sharers as part of the state for that block. This is much more complex
+and bandwidth intensive than our previous protocols, which allowed for silent evictions of
+blocks in S. A simpler, but less complete, alternative allows the LLC to conservatively track
+sharers; that is, the memory controller’s state S means that there are zero-or-more caches
+in state S. The cache controller silently replaces blocks in state S, and thus the LLC stays in
+S even after the last sharer has been replaced. If a block in state M is written back (with a
+PutM), the state of the LLC block becomes I. This “conservative S” solution forgoes some
+opportunities to use the E state (i.e., when the last sharer replaces its copy before another
+core issues a GetM), but it avoids the need for explicit PutS transactions and still captures
+many important sharing patterns.
 
+  7.3.3 High-Level Specification of Protocol
+  
+  Sidebar: MESI Snooping if E is Non-ownership State  
+  
+  One solution to this problem is to have the LLC/memory wait for the cache to respond.
+When a GetS or GetM is serialized on the bus, a cache with the block in state M responds with
+data. The memory controller waits a fixed amount of time and, if no response appears in that
+window of time, the memory controller deduces that it is the owner and that it must respond.
+If a response from a cache does appear, the memory controller does not respond to the coherence
+request. This solution has a couple drawbacks, including potentially increased latency for
+responses from memory. Some implementations hide some or all of this latency by speculatively
+prefetching the block from memory, at the expense of increased memory bandwidth, power, and
+energy. A more significant drawback is having to design the system such that the caches’ response
+latency is predictable and short.
 
+/*********************** STILL some problems about mem controler occur to me in page 119**********************/
+
+7.4 ADDING THE OWNED STATE
+ 
+ 7.4.1 Motivation
+     Adding the O state achieves two benefits: (1) it eliminates the extra data message to update
+  the LLC/memory when a cache receives a GetS request in the M (and E) state, and (2) it eliminates
+  the potentially unnecessary write to the LLC (if the block is written again before being written
+  back to the LLC).
+  
 7.5 NON-ATOMIC BUS
 
 7.5.1 Motivation
@@ -411,4 +462,9 @@ the data network as a crossbar. Once again, there are point-to-point links inste
 bandwidth of the crossbar far exceeds what would be possible with a bus (physical or logical).
 
 2.IBM Power5
+
+
+
+   CH 8  Directory Coherence Protocols
+
 
