@@ -467,4 +467,60 @@ bandwidth of the crossbar far exceeds what would be possible with a bus (physica
 
    CH 8  Directory Coherence Protocols
 
+8.1 INTRODUCTION TO DIRECTORY PROTOCOLS
+    Like snooping protocols, a directory protocol needs to define when and how coherence transactions
+  become ordered with respect to other transactions. In most directory protocols, a coherence
+  transaction is ordered at the directory. Multiple coherence controllers may send coherence requests
+  to the directory at the same time, and the transaction order is determined by the order in which
+  the requests are serialized at the directory. 
+     If two requests race to the directory, the interconnection
+  network effectively chooses which request the directory will process first. The fate of the request
+  that arrives second is a function of the directory protocol and what types of requests are racing. The
+  second request might get
+     (a) processed immediately after the first request, 
+     (b) held at the directory while awaiting the first request to complete, 
+     (c) negatively acknowledged (NACKed).
+     
+     Traditional snooping protocols create a total order by serializing
+all transactions on the ordered broadcast network. Snooping’s total order not only ensures that each
+block’s requests are processed in per-block order but also facilitates implementing a memory consistency
+model.
+     In contrast, a directory protocol orders transactions at the directory to ensure that conflicting
+requests are processed by all nodes in per-block order. However, the lack of a total order means that
+a requestor in a directory protocol needs another strategy to determine when its request has been
+serialized and thus when its coherence epoch may safely begin. Because (most) directory protocols
+do not use totally ordered broadcast, there is no global notion of serialization. Rather, a request must
+be individually serialized with respect to all the caches that (may) have a copy of the block. Explicit
+messages are needed to notify the requestor that its request has been serialized by each relevant
+cache. In particular, on a GetM request, each cache controller with a shared (S) copy must send an
+explicit acknowledgment (Ack) message once it has serialized the invalidation message.
+
+ 8.2.3 Avoiding Deadlock
+ 
+ Virtual Networks
+  A well-known solution for avoiding deadlock in coherence protocols is to use separate networks
+for each class of message. The networks can be physically separate or logically separate (called
+virtual networks), but the key is avoiding dependences between classes of messages. Figure 8.5
+illustrates a system in which request and response messages travel on separate physical networks.
+Because a response cannot be blocked by another request, it will eventually be consumed by its destination
+node, breaking the cyclic dependence.
+  
+ Three networks!
+  The directory protocol in this section uses three networks to avoid deadlock. Because a request
+can cause a forwarded request and a forwarded request can cause a response, there are three
+message classes that each require their own network.
+ 1. Request messages are GetS, GetM, and PutM.
+ 2. Forwarded request messages are Fwd-GetS, Fwd-GetM, Inv(alidation), and Put-Ack.
+ 3. Response messages are Data and Inv-Ack.
+The protocols in this chapter require that the Forwarded Request network provides point-to-point ordering; 
+other networks have no ordering constraints nor are there any ordering constraints between messages traveling on different networks.
+
+8.2.4 Detailed Protocol Specification
+
+  The coherence controllers must manage the states of blocks that are in the midst of
+coherence transactions, including situations in which a cache controller receives a forwarded request
+from another controller in between sending its coherence request to the directory and receiving all
+of its necessary response messages, including Data and possible Inv-Acks. The cache controllers can
+maintain this state in the miss status handling registers (MSHRs) that cores use to keep track of
+outstanding coherence requests.
 
