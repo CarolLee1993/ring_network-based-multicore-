@@ -524,3 +524,37 @@ of its necessary response messages, including Data and possible Inv-Acks. The ca
 maintain this state in the miss status handling registers (MSHRs) that cores use to keep track of
 outstanding coherence requests.
 
+8.2.6 Protocol Simplifications
+
+Two kinds of Protocol Simplifications
+
+The most significant simplification, other than having only three stable states, is that the
+protocol stalls in certain situations. For example, a cache controller stalls when it receives
+a forwarded request while in a transient state. A higher performance option, discussed in
+Section 8.7.2, would be to process the messages and add more transient states.
+
+A second simplification is that the directory sends Data (and the AckCount) in response to
+a cache that is changing a block’s state from S to M. The cache already has valid data and
+thus it would be sufficient for the directory to simply send a data-less AckCount. We defer
+adding this new type of message until we present the MOSI protocol in Section 8.4.
+
+8.3 ADDING THE EXCLUSIVE STATE
+
+   Because the E state is an ownership state, the
+eviction of an E block cannot be performed silently; the cache must issue a PutE request to the directory.
+Without an explicit PutE, the directory would not know that the directory was now the owner
+and should respond to incoming coherence requests. Because we assume in this primer that blocks
+in E are owned, this simple solution is what we implement in the MESI protocol in this section.
+   In protocols in which an E block is not owned, an E block can be silently evicted, but the
+protocol complexity increases. Consider the case where core C1 obtains a block in state E and then
+the directory receives a GetS or GetM from core C2. The directory knows that C1 is either i) still
+in state E, ii) in state M (if C1 did a store with a silent upgrade from E to M), or iii) in state I (if the
+protocol allows C1 to perform a silent PutE). If C1 is in M, the directory must forward the request
+to C1 so that C1 can supply the latest version of the data. If C1 is in E, C1 or the directory may
+respond since they both have the same data. If C1 is in I, the directory must respond. One solution,
+which we describe in more detail in our case study on the SGI Origin [10] in Section 8.8.1, is
+to have both C1 and the directory respond. Another solution is to have the directory forward the
+request to C1. If C1 is in I, C1 notifies the directory to respond to C2; else, C1 responds to C2 and
+notifies the directory that it does not need to respond to C2.
+
+
