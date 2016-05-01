@@ -271,6 +271,9 @@ usual transient state naming convention. In this case, state XD indicates that t
 should revert to state X when it receives a NoData message (and move to state IorS if it receives a
 data message).
 
+7.3 ADDING THE EXCLUSIVE STATE
+
+
 
 7.5 NON-ATOMIC BUS
 
@@ -360,3 +363,52 @@ data message).
   one load or store, it may then change state and forward the block to another cache. We defer a more
   in-depth treatment of livelock to Section 9.3.2
   
+  We have not removed the stalls from the memory controller because it is not feasible.
+  
+7.6 OPTIMIZATIONS TO THE BUS INTERCONNECTION NETWORK
+
+7.6.1 Separate Non-Bus Network for Data Responses
+
+We have emphasized the need of snooping systems to provide a total order of broadcast coherence
+requests. The example in Table 7.2 showed how the lack of a total order of coherence requests can
+lead to incoherence. However, there is no such need to order coherence responses, nor is there a need
+to broadcast them. Thus, coherence responses could travel on a separate network that does not support
+broadcast or ordering. Such networks include crossbars, meshes, tori, butterflies, etc.
+
+7.6.2 Logical Bus for Coherence Requests
+
+Snooping systems require that there exist a total order of broadcast coherence requests. A sharedwire
+bus for coherence requests is the most straightforward way to achieve this total order of broadcasts,
+but it is not the only way to do so. There are two ways to achieve the same totally ordered
+broadcast properties as a bus (i.e., a logical bus) without having a physical bus.
+
+*One notable example is a tree with the coherence controllers at the leaves of the tree.
+If all coherence requests are unicasted to the root of the tree and then broadcast down the tree,
+then each coherence controller observes the same total order of coherence broadcasts. The serialization point in
+this topology is the root of the tree.
+
+**Logical total order: a total order of broadcasts can be obtained even without a network
+topology that naturally provides such an order. The key is to order the requests in logical
+time. Martin et al. [6] designed a snooping protocol, called Timestamp Snooping, that can
+function on any network topology. To issue a coherence request, a cache controller broadcasts
+it to every coherence controller and labels the broadcast with the logical time at which
+the broadcast message should be ordered.
+
+   The protocol must ensure that (a) every broadcast has a distinct logical time, 
+   (b) coherence controllers process requests in logical time order (even when they arrive out of this order in physical time),
+   and (c) no request at logical time T can arrive at a controller after that controller has passed logical time T.
+
+CASE STUDY:
+1.Sun Starfire E10000
+
+All links in the tree are point-to-point, thus eliminating the need for
+buses. A processor unicasts a request up to the top of the tree, where it is serialized and then broadcast
+down the tree. Because of the serialization at the root, the tree provides totally ordered broadcast.
+
+A given request may arrive at two processors at different times, which is fine; the important
+constraint is that the processors observe the same total order of requests. To improve bandwidth, the E10000 implements
+the data network as a crossbar. Once again, there are point-to-point links instead of buses, and the
+bandwidth of the crossbar far exceeds what would be possible with a bus (physical or logical).
+
+2.IBM Power5
+
