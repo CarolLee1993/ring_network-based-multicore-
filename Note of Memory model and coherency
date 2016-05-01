@@ -220,3 +220,143 @@ of these transient states.
  Relaxing the Atomic Requests property introduces numerous situations in which a cache controller observes a request from another controller
  on the bus in between issuing its coherence request and observing its own coherence request on
  the bus.
+ 
+ The window of vulnerability during the S-to-M transition complicates the addition of an Upgrade transaction,as the sidebar below.
+ 
+                       Sidebar: Upgrade Transactions in Systems Without Atomic Requests
+                       
+ For the protocol with Atomic Requests, an Upgrade transaction is an efficient way for a cache to
+ transition from Shared to Modified. The Upgrade request invalidates all shared copies, and it is
+ much faster than issuing a GetM, because the requestor needs to wait only until the Upgrade
+ is serialized (i.e., the bus arbitration latency) rather than wait for data to arrive from the LLC /
+ memory.
+ However, without Atomic Requests, adding an Upgrade transaction becomes more difficult
+ because of the window of vulnerability between issuing a request and when the request is serialized.
+ The requestor may lose its shared copy due to an Other-GetM or Other-Upgrade that is
+ serialized during this window of vulnerability. The simplest solution to this problem is to change
+ the block’s state to a new state in which it waits for its own Upgrade to be serialized. When its
+ Upgrade is serialized, which will invalidate other S copies (if any) but will not return data, the
+ core must then issue a subsequent GetM request to transition to M.
+ Handling Upgrades more efficiently is difficult, because the LLC/memory needs to know
+ when to send data. Consider the case in which cores C0 and C2 have a block A shared and both
+ seek to upgrade it and, at the same time, core C1 seeks to read it. C0 and C2 issue Upgrade
+ requests and C1 issues a GetS request. Suppose they serialize on the bus as C0, C1, and C2.
+ C0’s Upgrade succeeds, so the LLC/memory (in state IorS) should change its state to M but not
+ send any data, and C2 should invalidate its S copy. C1’s GetS finds the block in state M at C0,
+ which responds with the new data value and updates the LLC/memory back to state IorS. C2’s
+ Upgrade finally appears, but because it has lost its shared copy, it needs the LLC/memory to respond.
+ Unfortunately, the LLC/memory is in state IorS and cannot tell that this Upgrade needs
+ data. Alternatives exist to solve this issue, but are outside the scope of this primer.
+
+
+ The window of vulnerability also affects the M-to-I coherence downgrade, in a much more significant way.
+ 
+ To replace a block in state M, the cache controller issues a PutM request and
+changes the block state to MIA; unlike the protocol in Section 7.2.2, it does not immediately send
+the data to the memory controller. Until the PutM is observed on the bus, the block’s state is effectively
+M and the cache controller must respond to other cores’ coherence requests for the block. In
+the case where no intervening coherence requests arrive, the cache controller responds to observing
+its own PutM by sending the data to the memory controller and changing the block state to state
+I. If an intervening GetS or GetM request arrives before the PutM is ordered, the cache controller
+must respond as if it were in state M and then transition to state IIA to wait for its PutM to appear
+on the bus. Intuitively, the cache controller should simply transition to state I once it sees its PutM
+because it has already given up ownership of the block. Unfortunately, doing so will leave the memory
+controller stuck in a transient state because it also receives the PutM request. Nor can the cache
+controller simply send the data anyway because doing so might overwrite valid data. The solution is
+for the cache controller to send a special NoData message to the memory controller when it sees its
+PutM while in state IIA. The memory controller is further complicated by needing to know which
+stable state it should return to if it receives a NoData message. We solve this problem by adding a
+second transient memory state MD. Note that these transient states represent an exception to our
+usual transient state naming convention. In this case, state XD indicates that the memory controller
+should revert to state X when it receives a NoData message (and move to state IorS if it receives a
+data message).
+
+
+7.5 NON-ATOMIC BUS
+
+7.5.1 Motivation
+
+  the operation of a pipelined, non-atomic bus. The key advantage is not
+  having to wait for a response before a subsequent request can be serialized on the bus, and thus the
+  bus can achieve much higher bandwidth using the same set of shared wires.
+  
+7.5.2 In-Order vs. Out-of-order Responses
+
+  One major design issue for a non-atomic bus is whether it is pipelined or split-transaction. A
+  pipelined bus, as illustrated in Figure 7.9, provides responses in the same order as the requests. A
+  split-transaction bus, illustrated in Figure 7.10, can provide responses in an order different from the
+  request order.
+  
+  The advantage of a split-transaction bus, with respect to a pipelined bus, is that a low-latency
+  response does not have to wait for a long-latency response to a prior request.
+  
+  With a split-transaction bus, the response must carry the identity of the request or the requestor.
+  
+7.5.3 Non-Atomic System Model
+
+  The request bus and the response bus are split and operate independently.
+  
+  With FIFOs, Notably, if a coherence controller stalls when processing
+  an incoming request from the request bus, then all requests behind it (serialized after the stalled
+  request) will not be processed by that coherence controller until it processes the currently stalled request.
+  These queues are processed in a strict FIFO fashion, regardless of message type or address.
+  
+7.5.4 An MSI Protocol with a Split-Transaction Bus
+ 
+    Several transitions are now possible that were not possible with the atomic bus. For example,
+  a cache can now receive an Other-GetS for a block it has in state ISD.
+  All of these newly possible transitions are for blocks in transient states
+  in which the cache is awaiting a data response; while waiting for the data, the cache first observes
+  another coherence request for the block.
+  
+    that a transaction is ordered based
+  on when its request is ordered on the bus, not when the data arrives at the requestor. Thus, in each
+  of these newly possible transitions, the cache has already effectively completed its transaction but
+  just happens to not have the data yet. Returning to our example of ISD, the cache block is effectively
+  in S. Thus, the arrival of an Other-GetS in this state requires no action to be taken because a cache
+  with a block in S need not respond to an Other-GetS.
+  
+   The newly possible transitions other than the above example, however, are more complicated.
+  Consider a block in a cache in state IMD when an Other-GetS is observed on the bus. The cache
+  block is effectively in state M and the cache is thus the owner of the block but does not yet have
+  the block’s data. Because the cache is the owner, the cache must respond to the Other-GetS, yet
+  the cache cannot respond until it receives the data. The simplest solution to this situation is for the
+  cache to stall processing of the Other-GetS until the data response arrives for its Own-GetM. At
+  that point, the cache block will change to state M and the cache will have valid data to send to the
+  requestor of the Other-GetS.
+  
+  ??????????????????????????????????????????????????????????????????????????????????????????????????????
+  ---------------------------Here I think the subsequential other-Gets should 
+  get the modified data from previous GetM---------------------------------------------------------
+  ??????????????????????????????????????????????????????????????????????????????????????????????????????
+  
+  
+  Stalling raises three issues. 
+  
+  First, it sacrifices some performance.
+  Second, stalling raises the potential of deadlock. 
+  The third issue raised by stalling coherence requests is that, perhaps surprisingly, it enables
+  a requestor to observe a response to its request before processing its own request. So we need to 
+  add three more transitions IMa,SMa,ISa,to the protocol 
+  
+7.5.5 An Optimized, Non-Stalling MSI Protocol with a Split-Transaction Bus
+  
+  As mentioned in the previous section, we sacrificed some performance by stalling on the newly
+  possible transitions of the system with the split-transaction bus. For example, a cache with a block
+  in state ISD stalled instead of processing an Other-GetM for that block. However, it is possible
+  that there are one or more requests after the Other-GetM, to other blocks, that the cache could
+  process without stalling. By stalling a request, the protocol stalls all requests after the stalled request
+  and delays those transactions from completing.
+  
+  The solution to this problem is to process all messages, in order, instead of stalling. Our approach
+  is to add transient states that reflect messages that the coherence controller has received but
+  must remember to complete at a later event. Returning to the example of a cache block in ISD, if the
+  cache controller observes an Other-GetM on the bus, then it changes the block state to ISDI (which
+  denotes “in I, going to S, waiting for data, and when data arrives will go to I”).
+  
+  To guarantee that this livelock cannot arise, we require that a cache in ISdI, IMdI,
+  IMdS, or IMdSI (or any comparable state in a protocol with additional stable coherence states)
+  perform one load or store to the block when it receives the data for its request. After performing
+  one load or store, it may then change state and forward the block to another cache. We defer a more
+  in-depth treatment of livelock to Section 9.3.2
+  
