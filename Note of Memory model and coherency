@@ -557,4 +557,38 @@ to have both C1 and the directory respond. Another solution is to have the direc
 request to C1. If C1 is in I, C1 notifies the directory to respond to C2; else, C1 responds to C2 and
 notifies the directory that it does not need to respond to C2.
 
+8.4 ADDING THE OWNED STATE
+
+Adding the Owned state changes the protocol, compared to MSI, in three important ways: 
+(1) a cache with a block in M that observes a Fwd-GetS changes its state to O 
+    and does not need to (immediately) copy the data back to the LLC/memory,
+(2) more coherence requests are satisfied by caches (in O state) than by the LLC/memory, and 
+(3) there are more than 3-hop transactions (which would have been satisfied by the LLC/memory in an MSI protocol).
+
+  The most interesting difference is the transaction in which a requestor of a block in
+state I or S sends a GetM to the directory when the block is in the O state in the owner cache and in
+the S state in one or more sharer caches. In this case, the directory forwards the GetM to the owner,
+and appends the AckCount. The directory also sends Invalidations to each of the sharers. The owner
+receives the Fwd-GetM and responds to the requestor with Data and the AckCount. The requestor
+uses this received AckCount to determine when it has received the last Inv-Ack. There is a similar
+transaction if the requestor of the GetM was the owner (in state O). The difference here is that the
+directory sends the AckCount directly to the requestor because the requestor is the owner.
+This protocol has a PutO transaction that is nearly identical to the PutM transaction. It
+contains data for the same reason that the PutM transaction contains data, i.e., because both M and
+O are dirty states.
+
+8.5 REPRESENTING DIRECTORY STATE
+
+8.5.1 Coarse Directory
+
+   One way to reduce the directory state is to
+conservatively maintain a coarse list of sharers that is a superset of the actual set of sharers. That is,
+a given entry in the sharer list corresponds to a set of K caches, as illustrated in the middle entry
+of Figure 8.8. If one or more of the caches in that set (may) have the block in state S, then that bit
+in the sharer list is set. A GetM will cause the directory controller to send an Invalidation to all K
+caches in that set. Thus, coarse directories reduce the directory state at the expense of extra interconnection
+network bandwidth for unnecessary Invalidation messages, plus the cache controller
+bandwidth to process these extra Invalidation messages.
+
+8.5.2 Limited Pointer Directory
 
