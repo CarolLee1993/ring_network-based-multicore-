@@ -592,3 +592,48 @@ bandwidth to process these extra Invalidation messages.
 
 8.5.2 Limited Pointer Directory
 
+8.7 PERFORMANCE AND SCALABILITY OPTIMIZATIONS
+
+8.7.2 Non-Stalling Directory Protocols
+
+    For example, when a cache controller has a block in state IMA and receives a Fwd-GetS,
+it processes the request and changes the block’s state to IMAS.
+This state indicates that after the cache controller’s GetM transaction
+completes (i.e., when the last Inv-Ack arrives), the cache controller will change the block state to
+S. At this point, the cache controller must also send the block to the requestor of the GetS and to
+the directory, which is now the owner. By not stalling on the Fwd-GetS, the cache controller can
+improve performance by continuing to process other forwarded requests behind that Fwd-GetS in
+its incoming queue.
+
+8.7.4 Silent vs. Non-Silent Evictions of Blocks in State S
+
+Advantages of Silent PutS
+
+The drawback to the explicit PutS is that it uses interconnection network bandwidth—albeit for
+small data-free PutS and Put-Ack messages—even in cases when it ends up not being helpful. For
+example if core C1 sends a PutS to the directory and then subsequently wants to perform a load to
+this block, C1 sends a GetS to the directory and re-acquires the block in S. If C1 sends this second
+GetS before any intervening GetM requests from other cores, then the PutS transaction served no
+purpose but did consume bandwidth.
+
+Advantages of Explicit PutS
+
+The primary motivation for sending a PutS is that a PutS enables the directory to remove the cache
+no longer sharing the block from its list of sharers. There are three benefits to having a more precise
+sharer list. First, when a subsequent GetM arrives, the directory need not send an Invalidation to
+this cache. The GetM transaction is accelerated by eliminating the Invalidation and having to wait
+for the subsequent Inv-Ack. Second, in a MESI protocol, if the directory is precisely counting the
+sharers, it can identify situations in which the last sharer has evicted its block; when the directory
+knows there are no sharers, it can respond to a GetS with Exclusive data. Third, recall from Section
+8.6.2 that directory caches that use Recalls can benefit from having explicit PutS messages to
+avoid unnecessary Recall requests.
+*********************************
+A secondary motivation for sending a PutS, and the reason our baseline protocol does send a
+PutS, is that it simplifies the protocol by eliminating some races. Notably, without a PutS, a cache
+that silently evicts a block in S and then sends a GetS request to re-obtain that evicted block in S
+can receive an Invalidation from the directory before receiving the data for its GetS. In this situation,
+the cache does not know if the Invalidation pertains to the first period in which it held the
+block in S or the second period (i.e., whether the Invalidation is serialized before or after the GetS).
+The simplest solution to this race is to pessimistically assume the worst case (the Invalidation pertains
+to the second period) and always invalidate the block as soon as its data arrives. More efficient
+solutions exist, but complicate the protocol.**************************************
