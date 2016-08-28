@@ -1,0 +1,1270 @@
+LEFT PROBLEMS: 16/08/07  now(@ PM 13:13) I face a big problem that test of top_level can't go ahead due to some reasons. LIMITED TO THE FIRST time set;
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////from 16/7/28 to 16/7/31 
+These days I was diving into the branch predictor design expploration,
+finally, I figure it out that BTBTagSize15 and 2bits local predictor is suitable
+for my core
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////today is 16/08/01,Mon
+//// a fresh day of new month!  
+I plan to verify that my front-end can work well functionnally.
+//now AM 8:44 let's begin the journey!
+//apart from desk at am 11:48
+
+//begin at PM 14:35 in tb_core_btb till PM 17:10
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////today is 16/08/02 Tue
+//now AM 8:35 plan to finish branch predictor testbench coding and 
+optimize the decode module
+// now AM 9:33, suddenly I remember that I haven't finished tc_core_btb
+left at AM 12:00
+from PM 14:35 to PM 17:10 finish tb_core_btb,modified core_id and core_ex
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////today is 16/8/03  Thu
+///from AM 8:30 to AM 12:00 
+work at tb_core_id
+////from PM 14:40 to PM 17:10
+work at tb_core_id and tb_core_ex
+
+////////////////////////////////////////////////////////////////////////////////////////////////////today is 16/08/04  Wen
+//from AM 8:30 to AM 12:00
+finish test bench coding and begin doing simulation!
+///from PM 14:28
+///now is PM 16:32 regfile is functinallity right!
+//next is core_pc!  finish core_pc test.It seems core_pc works well!@PM 16:59 exciting!
+ Now I think it is necessary to display some indications to tell me what is the right thing
+ shonw in waveform! 
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////today is 16/08/05/ Friday
+
+////////plan to finish small parts of core£¡
+//Now(AM 8:44) let's test core_ex, 
+
+///AM 9:40 It seems that core_ex doesn't work well.
+///something wrong happen, now I should analyse where is the problem?
+///obviously,something wrong happened to forward unit, but I have sovled it already!
+///@AM 11:11 finish core_ex test!
+//now, let's move on to core_pht test!
+
+///@AM 11:47 in my opnion, something wrong might happened to pht_update algorithm. 
+///from PM 14:49  @ PM 15:44 I find the bugs! @15:59 I finish the test of core_pht.
+/// Now I feel good for this problems ,maybe I have got used to this things ,which is very nice! 
+
+///Now,It's time to face the tough things, core_id test, first i need to make its test code seems right!
+
+///core_id test should be considered carefully!  Now PM 17:03.
+
+///from  PM 19:55  to PM 20:45
+///from PM 21:20 to PM 21:47 I find something wrong happened to btb_update part of core_id
+//there is nothing wrong with core_id, I made a mistake for tb_core_id;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////Today is 16/08/06 sun
+
+// It's time to test core pipeline under test plans below
+from AM 9:00 to AM 11:40
+
+
+from PM 16:00 to PM 18:00
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+from PM 20:05 to PM 22:19 ;testing core pipeline 
+
+//@ PM 22:20 now I just find that top_level can't n that way,
+//may I should do it one by one which means I should feed the pipeline inst by hands
+//if it can work by my hands , I will move on to instmem;
+///idea 1: there may be something stuck in pc_module to prevent it go ahead ; I think maybe I find where is the proplem!
+from PM 22:33 to PM 23:05
+there is a deadlock between pc_go and v_inst, both of them is stay at 0 at beginning so pc can't go ahead;
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////NOTE: I modified the v_inst or v_pc_out1 to make pc go ahead, after finishing the test of core pipeline I should solve it right away!
+///idea 2;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 16/8/7
+///problem is in the core_id deocode block: decoder regard nop as a inst which can
+///write data to reg, so cause the stall signal stay at high from one mpoment  
+from AM 09:55 to AM 12:30 and from PM 13:03
+////now(@ PM 13:13) I face a big problem that test of top_level can't go ahead due to some reasons.
+////from PM 14:40 to
+  
+now(@PM 15:08)
+/////the reason that top_level can't go ahead is a deadlock from pc_go to v_inst to pc_go without time delay, so the simulation terminated right away.
+/////solution is cut off the deadlock somehow or assign some time dealys before the assign sentences.
+/////after I assign a time delay before v_pc_out, the tb_top_level work again! It feels so good! work harder in the future!
+
+PROBLEM@ CORE_MEM_WB valid_read_memdata stop data_input being writing in regs,I need to figure out the function of this signal, but now I should make cpu
+     plpeline run well firstly.
+///after delete the signal valid_read_memdata, the fisrt test seems correct!
+///now I want to use excenlent to describe my job just done, if leave it along I can't go ahead without upset about unsolved problems which maybe delay my plan
+/// and also kill my confidence. while I gain confidence and experience from this moment. I deserved it!
+
+///@ PM 16:02 now I should write left test suites!  
+
+///from PM 21:00 
+begin to prepare test suites
+////////////////////////////case 1:  just test whether the pipeline without forwarding unit can work.////////////////////
+  
+addi r1, r0, 1;
+addi r2, r0, 2;
+... until ri=i;
+
+have past the test!
+////////////////////////////case 2:  test the forwarding unit /////////////////////////////////
+
+/// data forwarding unit///
+addi r1, r0, 1;
+addi r2, r1, 1;
+addi r3, r2, 1;
+addi r4, r3, 1;
+... until ri = i;
+////hex maichne code
+24010001
+24220001
+24430001
+24640001
+24850001
+24a60001
+24c70001
+24e80001
+25090001
+252a0001
+254b0001
+256c0001
+258d0001
+25ae0001
+25cf0001
+25f00001
+26110001
+26320001
+26530001
+26740001
+26950001
+26b60001
+26d70001
+26f80001
+27190001
+273a0001
+275b0001
+277c0001
+279d0001
+27be0001
+27df0001
+/////////////////////////////case 3: all kinds of insts/////////////////////////////////////
+
+///all kinds of inst
+slti   $3, $1,  4; # r3 will be set to 1    
+sltiu  $3, $4,  2; # r3 will be reset to 0 
+addi   $1, $1,  1; # r1 = 2
+addiu  $2, $1,  1; # r2 = 3
+
+lui    $5, 0x6d5e     # r5 = 0x6d5e0000
+ori    $5, $5, 0x4f3c # r5 = 0x6d5e4f3c
+andi   $5, $5, 0x00ff # r5 = 0x0000003c;
+xori   $5, $5, 0xffc3 # r5 = 0x0000ffff;
+
+sll    $6, $5, 4 ;    # r6 = 0x000ffff0; 
+srl    $6, $5, 5 ;    # r6 = 0x000007ff; 
+lui    $5, 0xff00     # r5 = 0xff000000
+ori    $5, $5, 0xff00 # r5 = 0xff00ff00
+sra    $6, $5, 8      # r6 = 0xffff00ff  wrong 
+
+sllv   $6, $5, $4;    # r6 = 0xf00ff000 
+srlv   $6, $5, $7;    # r6 = 0x01fe01fe
+srav   $6, $5, $7;    # r6 = 0x81fe0000
+
+addiu   $1, $0, 1; 
+add    $2, $1, $1;
+addu   $3, $2, $1;
+sub    $5, $7, $2;
+subu   $6, $9, $3;
+
+and    $10, $31, $10;
+lui    $5, 0x00ff     # r5 = 0x00ff0000
+ori    $5, $5, 0x00ff # r5 = 00ff00ff
+lui    $6, 0xff00     # r6 = 0xff000000
+ori    $6, $6, 0xff00 # r6 = ff00ff00
+xor    $7, $6, $5;    # r7 = ffffffff
+
+or     $31, $31, $1;  # r31 = 31;
+
+nor    $31, $31, $1;  # r31 = ffffffe0; wrong
+
+slt    $1, $15, $16;  # r1 = 1;
+sltu   $1, $16, $15;  # r1 = 0;
+
+
+28230004
+2c830002
+24210001
+24220001
+3c056d5e
+34a54f3c
+30a500ff
+38a5ffc3
+00053100
+00053142
+3c05ff00
+34a5ff00
+00053203
+00853004
+00e53006
+00e53007
+24010001
+00211021
+00411821
+00e22823
+01233023
+03ea5024
+3c0500ff
+34a500ff
+3c06ff00
+34c6ff00
+00c53826
+03e1f825
+03e1f827
+01f0082a
+020f082b
+
+//////////////branch inst/////////////////////////////
+
+  add $s1, $0, $0     # sum =0
+  addi $s0, $0, 0     # i = 0
+  addi $t0, $0, 10    # $t0 = 10
+for:
+  beq $s0, $t0, done  # if i == 10, branch to done
+  add $s1, $s1, $s0   # sum = sum + i
+  addi $s0, $s0, 1    # increment i
+  j for
+done:  # after the execution of insts above $s1(r17)= 55
+
+hex machine code:
+00008821
+24100000
+2408000a
+1208fffc
+02308821
+26100001
+08000000
+2401ffff
+////////////test jal and jr  core_btb ///////////////////////////
+/* RECURSIVE PROCEDURE CALL
+
+0x8c            addi $sp, $0   0x00ff          # may be enough!
+0x90 factorial: addi $sp, $sp, -8              # make room on stack
+0x94            sw $a0, 4($sp)                 # store $a0
+0x98            sw $ra, 0($sp)                 # store $ra
+0x9C            addi $t0, $0, 2                # $t0 = 2
+0xA0            slt $t0, $a0, $t0              # a <= 1 ?
+0xA4            beq $t0, $0, else              # no: goto else
+0xA8            addi $v0, $0, 1                # yes: return 1
+0xAC            addi $sp, $sp, 8               # restore $sp
+0xB0            jr $ra                         # return
+0xB4      else: addi $a0, $a0, -1              # n = n - 1
+0xB8            jal factorial                  # recursive call
+0xBC            lw $ra, 0($sp)                 # restore $ra
+0xC0            lw $a0, 4($sp)                 # restore $a0
+0xC4            addi $sp, $sp, 8               # restore $sp
+0xC8            mul $v0, $a0, $v0              # n * factorial (n-1)
+0xCC            jr $ra                         # return
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/8
+from AM 8:33 to 
+
+///////////////////////test mem//////////////////////
+addiu   $1, $0,  0x00ff     # $1 = 0x00ff
+sw      $1, 0x0000($0)           # store 0x00ff
+sw      $1, 0x0004($0)           # store 0x00ff
+sw      $1, 0x0008($0)           # store 0x00ff
+sw      $1, 0x000c($0)           # store 0x00ff
+sw      $1, 0x0010($0)           # store 0x00ff
+sw      $1, 0x0014($0)           # store 0x00ff
+sw      $1, 0x0018($0)           # store 0x00ff
+sw      $1, 0x001c($0)           # store 0x00ff
+sw      $1, 0x0020($0)           # store 0x00ff
+sw      $1, 0x0024($0)           # store 0x00ff
+sw      $1, 0x0028($0)           # store 0x00ff
+sw      $1, 0x002c($0)           # store 0x00ff
+sw      $1, 0x0030($0)           # store 0x00ff
+sw      $1, 0x0034($0)           # store 0x00ff
+sw      $1, 0x0038($0)           # store 0x00ff
+sw      $1, 0x003c($0)           # store 0x00ff
+
+lw      $2, 0x0000($0)           # store 0x00ff
+lw      $3, 0x0004($0)           # store 0x00ff
+lw      $4, 0x0008($0)           # store 0x00ff
+lw      $5, 0x000c($0)           # store 0x00ff
+lw      $6, 0x0010($0)           # store 0x00ff
+lw      $7, 0x0014($0)           # store 0x00ff
+lw      $8, 0x0018($0)           # store 0x00ff
+lw      $9, 0x001c($0)           # store 0x00ff
+lw      $10, 0x0020($0)           # store 0x00ff
+lw      $11, 0x0024($0)           # store 0x00ff
+lw      $12, 0x0028($0)           # store 0x00ff
+lw      $13, 0x002c($0)           # store 0x00ff
+lw      $14, 0x0030($0)           # store 0x00ff
+lw      $15, 0x0034($0)           # store 0x00ff
+lw      $16, 0x0038($0)           # store 0x00ff
+lw      $17, 0x003c($0)           # store 0x00ff
+
+//////respective  hex maachine code/////
+240100ff
+ac010000
+ac010004
+ac010008
+ac01000c
+ac010010
+ac010014
+ac010018
+ac01001c
+ac010020
+ac010024
+ac010028
+ac01002c
+ac010030
+ac010034
+ac010038
+ac01003c
+8c020000
+8c030004
+8c040008
+8c05000c
+8c060010
+8c070014
+8c080018
+8c09001c
+8c0a0020
+8c0b0024
+8c0c0028
+8c0d002c
+8c0e0030
+8c0f0034
+8c100038
+8c11003c
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////test conclusion/////////////////////////////////
+/////case 1: have past the test;
+/////case 2: @ PM 09:55 can't write the last data to reg31, other inst perform well! 
+///         now I need to figure out what is the bug? 
+///Here is my thought:
+                     1, last inst has been read out;
+                     2, can't read anything from reg because they are not ready;
+                     3, when alu exexute addiu, alu_src_reg_imm become 32'hzzzzzzzz;
+                     4, alu_src changed from 2'h1 to 2'h0;
+                     5, why it changed at that time; then I find out I regard ex_alusrc as ex_alusrc_reg(connection mistakes in cor.v);
+/// after change connection in core.v, the program goes well!
+
+///@ AM 10:18 move on to lw/sw inst test!
+
+//////case 3:  lw/sw insts
+/////@ AM 11:32  i am confused about why last 3 inst always make mistakes due to wb_mux_regdata, wb_memtoreg;
+from PM 15:09  to Pm 17:17
+/////@ PM 16:16  I find I did a stupid mistake that I didn't check the assign sentence of wb_mux_regdata;
+                 How should I regard wb_regwrite_reg as wb_memtoreg_reg for along time!!! However it's lucky for me to find the bug here!
+    
+      self_conclusion: Next time I should pay attention to the code carefully .
+@PM 16;20 lw/sw insts past the test  
+
+//////case 4: branch inst for testing branch predictor/////////
+  addu  $17, $0, $0     # sum =0
+  addiu $16, $0, 0     # i = 0
+  addiu $8, $0, 10    # $t0 = 10
+for:
+  beq   $16, $8, 0x0003  # if i == 10, branch to done
+  addu  $17, $17, $16   # sum = sum + i
+  addiu $16, $16, 1    # increment i
+  j  0x0003
+done:
+  addiu   $1, $0, 0xffff
+
+/////@ PM 17:14 There are something wrong causing inst word doesn't have the respective inst addr;
+
+/////// from PM 21:29 to PM 00:02
+@ PM 22:21 I think I have found that branch target update method can't work well, which cause even 
+           there is a branch misprediction due to PHT misprediction instead of btb, btb_v set to 0 sent to pc_module 
+           let pc goes ahead to pc_plus_4;NOw it's time for me to figure out the concret bugs.
+
+@ PM 23:45 PROBLEM@ 1, id_flush should be considered carefully again!
+           PROBLEM@ 2, core_pht seems bad when update PHT table.
+           PROBLEM@ 3, bp_update algorithm mis match my thought! I need to fix it.
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/9   10.73 hours
+
+from AM 9:20 to  PM 12:20
+///Now I am still debugging core pipeline to figure out the probelms left yestoday.
+//////@ AM 9:49 I find that I lost some cases in BP_update algorithm part of core_id, now I should fix it right now!
+
+from PM 12:54 to PM 14:00
+//////@ PM 13:20 I have fix some bugs (change id_pc_src=taken to id_pc_src=taken&&(!pred_right_out)  in the core_pc of core.v ) 
+  
+//////////@ PM 14:00 I think I have find the bugs in core_id ; the mistakes are that I regard `beq and `bne as their ex_aluop;
+                    What a stupid mistake I had made! UNderline again, I should work out the origin type of code. DON"T stay at surface of code. 
+
+////from PM 14:45 to  PM 15:51
+
+////@ PM 14:53 Now I can make sure that branch insts  can work well ;while jr inst or RAS via BTB is still not verified to be right.
+      next step I need to test other kinds of insts
+
+/////////case 5: R-type and I_type insts/////////////////////////////////
+
+///from PM 16:19 to PM 17:24
+///from PM 18:45 to PM 19:49
+  Problem 1: there is something wrong in sra and sllv, slrv, srav.
+
+/// @ PM 19:49 I have fixed problem 1, and now only RAS and jr inst haven't been verified.
+
+
+/// from PM 20:31 to 22:50
+/// in order to simplify the test of jr and RAS , I will use a simple procedure call
+
+0x0000
+   addiu $4, $0, 2  # argument 0 = 2
+   addiu $5, $0, 3  # argument 1 = 3
+   addiu $6, $0, 4  # argument 2 = 4
+   addiu $7, $0, 5  # argument 3 = 5
+   jal  0x0024   # call procedure
+   addu  $16, $2, $0 # y = returned value
+   j    0x0000
+
+ diffofsums:0x0024
+   addu $8, $4, $5 # $t0 = f + g
+   addu $9, $6, $7 # $t1 = h + i
+   subu $16, $8, $9 # result = (f + g) - (h + i)
+   addu $2, $16, $0  # put return value in $v0
+   jr   $31           # return to caller
+//////////////////////////////////////
+HEX MACHINE CODE   3 times call diffofsums in main function
+@0000
+24040002
+24050003
+24060004
+24070005
+0c000028
+00028020
+24040002
+24050003
+24060004
+24070005
+0c000028
+00028020
+24040002
+24050003
+24060004
+24070005
+0c000028
+00028020
+
+@0028
+00854021
+00c74821
+01098023
+02001021
+03e00008
+
+///@ PM 22:13  I find that jal can't be write into BTB, so RAS can't work without infos from BTB; 
+             
+/////  now let me figure out what is the problem?
+///@ PM 22:36  I do make sure BTB and RAS work well together!
+/// The only cases I did't test is RAS recovery.
+   plan: first, do the unit level test;
+         then, do the whole system test with programs.
+               I should work out a case that two BTB writes enter same BTB entry causing mispred for jr and jal.
+
+/// let's check out the unit test!
+
+@ PM 22:49 want to go to bed... that's all today!
+ 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/10  8.63 hours
+from AM 9:00 to AM 12:00
+///Now I am ready to begin test of RAS.
+   fisrt , figure out the test cases of RAS
+   second , run the testbench of RAS.
+///@ AM 11:37 there are some thing need to be optimise in the RAS reg write logic enable signals.
+///@ AM 12:00 I have finished the test of RAS, the output of waveform proves that RAS works well!
+
+/////////////////////////////////////////////////////by now I have finished the test of core pipeline!
+
+/////////////////////////////////////////////////////
+///////I will move on to memory system test!/////////
+/////////////////////////////////////////////////////
+
+from PM 16:46 to 19:02
+
+///// Now I am ready to begin memory system test and debug.
+Now there are still many unit testbench left for me to finish.
+I will do from the easy ones:   arbiter_4_enq; @ PM 17:34 arbiter_4_enq has passed just now!
+
+@ PM 17:35 begin working on arbiter_4_deq testbench, which is difficult! pretty difficult!!!
+
+from PM 19:17 to  20:20
+
+@ PM 19:50 I just finish reading the code of that module;Now I should plan to write the testbench of arbiter_4_deq.
+
+from PM 21:00 to PM 23:18
+
+////@ PM 21:42 Suddenly i wonder if busy flag of local fifos also should be reset to idle when current flits has been sent to next node ?
+//// there is no logic to reset busy flags ,so the test goes as not same as what I want.
+
+//// NOTE: I can use empty signals of the local fifos to reset the busy flags or I should rfer to the document of my project.
+
+//// from project document, I konw I should use the ctrl info of the flits in the fifos to reset respective busy flags.
+//// Now I should add input to arbiter_4_deq to enable the reset of flags.
+
+////althougn I have add the ctrl info to reset flags , while testbench sstill can't work well as expected situation. 
+////Maybe I should break it down to simplify the test. left for later time.
+
+///look for some easy module to test firstly.
+ 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/11    10h 13 mins
+
+from AM 9:07 to PM 12:43                         3 h ,36 min
+
+//// still work at arbiter_4_deq, I find that next_fifo busy flags should also be reset to 0 when current flit has finished transmision.
+
+///PROBLEM @AM 11:03  next_in_rep_busy and next_in_req_busy are not reset to 0 as we expected.
+
+//// @ AM 11:59 It seems that arbiter_4_deq works as the way I want.  
+////            now I need to give it more  vetors to test the fairness of the priority logic in some cases.
+////            I feel that I have gain some skills in debugging! That's good!
+
+///// local_rep_go prevent pass_rep_go to be one ,so disable the function of RR selection between local fifo and pass fifo
+/////  in order to active the function , now I first disable the prevent logic.
+
+/////  After disable the priority logic from local to pass , the arbiter4_deq works as I want!
+
+
+ 
+from PM 14:25 to  PM 16:01         1h 36mins
+
+/////  The test proves that The arbiter works well under different length of flits 
+
+///// next step is adding various length code to test the special logic for local rep fifo;
+
+//// @ PM 15:48 NOW I can say that I have finished the test of arbiter_4_deq, which seems difficult for me before throwing myself into the the problems.
+////            I feel good for solving the problem which scared me yesterday! 
+
+from PM 16:36 to  17:53            1h 17mins
+
+// @ PM 17:11
+Problem @ 960000 ns and 1240000ns : wrong selection for cpu_access for this time because v_cpu is low; Ineed to find out why this happened.
+
+Problem @ 1360000ns : wrong selection for dc_donwload because this time it is low 
+
+//// @ PM 17:31 problem have been solved by modifying the state machine update logic.  arbiter_for_dcache passed test!
+
+/// @ PM 17:51 arbiter_for_mem has just passed the test!
+
+
+from  PM 19:24 to 20:46            1h 22mins
+
+////@PM 19:24  begin testing arbiter_for_OUT_req ; passed
+/// @PM 20:08  begin testing arbiter_for_OUT_rep ; passed
+/// @PM 20:46  begin testing arbiter_IN_node; 
+
+from  21:20 to 23:42               2h 22mins
+
+///// it's not easy to feed the random input to arbiter_IN_node ; 
+/////  I should first list the possible cases, then figure out respective flit input.
+
+/////@PM 23:42 finished test of arbiter_IN_node .
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/12    8h 55 mins
+
+from  AM 8:14 to  10:15   2h 1min
+
+////today's tasks are followings:
+tb_dc_download;    -ing;  passed!  from AM 8:14 to 9:22
+tb_dc_rep_upload;  -ing;  passed!  from AM 9:22 to 10:15
+tb_dc_req_upload;  -ing;  passed   from AM 10:43 to 11:02
+tb_ic_download;    -ing,  passed   from Am 11:05 to 11:54
+tb_ic_rep_upload;  -ing,  passed   from AM 11:54 to 12:11
+tb_m_download;     -ing,  passed   from PM 15:39 to 16:43
+tb_m_rep_upload;   -ing,  passed   from PM 16:43 to 17:16
+tb_m_req_upload;   -ing,  passed   from PM 17:16 to 19:55  longest!
+
+from AM 10:43 to  12:11    1h 28 mins
+
+ 
+from PM 15:39 to  19:55   4h 16 mins
+
+////// PROBLEM @ m_req_upload some signals stay at zzz and output looks different from my expected result!
+
+////// @ PM 18:16 It seems better now! while I also need to work out the right output to be compared with simulation output!
+ 
+////// PPROBLEM @ cnt_invs ; it can't recognize the local id and skip over it. JUMP to source code now.
+////// @ PM 18:45 I just add a cnt_invs==local_id to skip the msg to local node.
+
+//////@ PM 19:35 I find something wrong happend to the end of the test;
+
+//////@ PM 19:52 I still need to test the second part of the m_upload fsm; while now I have to take my dinner!
+//////@ PM 19:55 I find it has no problem because of the valid signal 
+
+
+
+////// left test task:  complexcity rank                 time cost
+1,tb_commu_assist          3                   passed    14h  total
+2,tb_whole_system          6
+3,tb_ring_node             5
+4,tb_network_interface     2                   passed    15h  51mins   OMG!
+5,tb_memory                4
+6,tb_DCNC                  4             -ing  
+7,tb_inst_cache            1             -ing  passed    3h 7mins
+
+
+from PM 22:00 to  23:10                      1h 10mins
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/13    9h 23mins
+
+from AM 8:54 to 10:51         1h 57mins
+
+////// @ AM 10:31 Now I guess inst cache can work with the pipeline; 
+//////        I still need to check other kinds of wave to make sure that inst cache can really work well
+
+from AM 11:10 to 12:10        1h
+
+
+from PM 15:03 to PM 18:04     3h 1mins
+////list test plan and code testbench!
+
+from PM 20:33 to PM 21:07       34mins
+////write tetsbench for network interface
+
+from PM 21:19 to PM  12:10   2h 51mins
+////begin test of network interface
+
+//// first there is something wrong in fifo module; I need  to test it first.
+
+
+/////////////////////////////////////////////////////////////////////////////////today is 2016/8/14      9h 25mins for arbiter_4_deq   9h 49mins total
+               
+from  Am 7:50 to  AM 11:52     4h 2mins                                                                                                      
+//// I need to modify the usedw from next node since the width become 5 bits from 4 bits; suddenly I find I don't need to change it.
+
+from PM 14:23 to PM  17:08     2h 45 mins
+
+////@ PM 17:06 I find the bugs in the arbitere_4_deq nad fited it well.
+
+/// now it's time to go back to network interface test.
+
+from PM 18:39 to PM  20:27     1h 48 mins
+
+/////@ PM 20:20 problem when ctrl becomes 2'b11, then it is very posibble it will bekilled in that cycle. So I need to figure out some method to prevent this happening.
+/////@ PM 20:26 just fixed the problem above 
+
+from PM 21:00 to PM  21:50     50 mins
+
+/// @ PM 21:36 when fifo is empty, we should  ot read data from it. if read , dout will be unexpected! So i must prevent arbiter_4_deq to dequeue flit from a empty fifo.
+/// then I need to modify the arbiter_4_deq .
+//// it seems i have solved the problem via just adding &&(!empty) to en vector in arbiter_4_deq !
+
+//////@ PM 21:50 IIIIIII can make sure most of the network interface is good! 
+
+
+/////////////////NEXT TEST IS COMMU ASSIST!/////////////////
+from  PM 22:33  to  PM  22:57    24mins
+
+///// prepare the test plan of commu_assist   
+
+
+//////////////////////////////////////////////////////////////////////////////////today is 2016/8/15    3h 18mins
+from AM 8:35 to  9:00
+
+from PM 14:29 to PM 17:11
+
+////begin to write testbench  for commu_assist;
+
+from PM 19:40 to PM  19:51
+
+tired!!!!!!!!!!!!
+
+from PM 23:10 to PM 23:22
+
+
+//////////////////////////////////////////////////////////////////////////////////today is 2016/8/16     6h 42mins
+
+from  AM 8:30 to  AM 11:10   2h 40 mins
+
+//////still work at tb_commu_assist 
+
+/////@ AM 9:25 killing the warnings in commu_assist module
+task list:
+    add m_ctrl_out to m_rep_upload;
+
+from PM 14:42  to  PM 15:01   19mins
+    
+from PM 20:17 to PM 21:35    1h 18mins
+
+/////@ PM 20:40  test path 1 passed;
+
+from  PM 21:45 to PM    00:10   2h 25mins
+
+/////@PM 22:53 till now It seems I just link the connections in a right way! There are still many things for me to do!
+
+/////@0:09 there is something wrong between arbiter_for_OUT_req and ic_req_upload some kind of deadlock.
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/17     6h 45mins
+
+from AM 7:16 to  AM 9:09
+
+/////try to solve the deadlock between arbiter_for_OUT_req and ic_req_upload.
+
+/////@ AM 9:07 by now previous tests of plan have passed already! I should add the compitation cases to the test later, first I need to have a rest now. 
+
+from AM 9:22 to  AM 10:12
+
+///// test compitation cases.
+
+from AM 10:28 to 11:20       by now cost 3h 35mins.
+
+/////@ AM 11:19 It seems that commu assist works in the way I wanted.
+///// finished  tb_commu_assist till now.
+
+
+from  PM 16:30 to  PM 17:00   30mins
+
+///////////prepare the test plan of data cache
+
+from  PM 20:21 to PM  21:41   1h 20mins
+
+from  PM 22:16 to  PM 23:36   1h 20mins
+
+///I should add the case 2.5 into the fsm of dc
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/18  
+
+from AM 9:30 to AM 10:50
+
+///@ AM 10:21 begin first simulation; obviously find some problems it's okey!
+
+
+from AM 11:53 to  Pm 12:30
+
+from PM 14:03 to  PM 14:26
+
+from PM 14:47 to  PM 16;11
+
+/////@PM 15:36 add cpu_data_for_wait to data cache.
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/19    1h 50mins
+
+from PM 22:07 to PM 23:57
+
+///// I solve the data_sel problem by putting them in another always block.
+
+///// there is something wrong in oneOrmore_reg==1 case.
+
+////NOTE: I feel happy that I can enjoy the work again! SEE YOU tomorrow!
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/20
+
+from AM 9:00 to  AM 10:07
+
+from AM 10:28 to   PM12:40
+
+////I should add necessary regs for temp flags; such as rep_local_remote 
+////I also need to split the signals into cpu_side one and network_side one if needed.
+
+//// By now PM 12:39 I just modified some code; 
+
+from PM 15:07 to  PM 16:56
+
+from PM 19:04 to  PM 20:47
+
+////@PM 20:44 by now case 1.1,1.2,1.3,1.4 have passed the special test; while we need to do some revision to rep_upload state and req_upload state 
+////          to test the all kinds of case.
+
+from PM 21:14 to  PM 21:40
+
+from PM 21:50  to PM 23:12 
+
+////@ PM 22:29 
+
+///// I am confused about the src_id of flushfail_msg and wbfail_msg;
+////tired to sleep
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/21
+
+from AM 8:28 to  AM 9:03
+
+////NOW I should finish the test of the system right now. There is little time for me to finish it, so hurry up!
+
+from AM 9:08 to AM  10:09
+
+fsm about read access has passed the test
+
+from AM 10:57 to PM 12:19
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/22      9h 41mins
+
+from AM 8:21 to AM  12:13
+
+/////@AM 10:41 many signals have pad!
+
+////@ AM 10:47 By now I have finished the majority of test case except for case in which exreq is sent to home first,
+              then SH_exrep comes back and invreps from other sharers comes one by one, there are also many cases for me to test;
+              Now let's do it.
+
+////obviously, there is something wrong with the SH_exrep case. I need to fix it.
+
+///@ AM 11:44 It seems that I have proved that data cache ctrler can work well!!!!!!!!!!!!
+
+/////It is high time for me to start to plan test of memory.  
+
+from PM 13:15 to  PM 13:35
+
+from PM 14:11 to  PM 15:49
+
+////@PM 15:01 I need to review the memory fsm implementation before making sure the test cases.
+
+//// I find that I lost local inst req in memory fsm, I should add that case.
+
+//// How should I forgot the meaning of state_vector for mem; I should give some note besides the code.
+
+////@ PM 15:40 I do make sure that I should check out all cases may happened to memory fsm. 
+            
+from PM 16:12 to PM  17:05     till now  6h 43mins
+
+//// I have questions from line 537 to line 573 in memory fsm, maybe I lost some cases() in the fsm_state
+
+//// I can make sure that temp_req_head_flit_in and temp_rep_head_flit_in are produced in a wrong way. I need to think of it carefully!!! 
+
+from PM 18:46 to PM  20:05    1h 19 mins  till now 8h 2mins
+
+///// obviously memory have more kinds of messages than data cache; now I am ready to list the cases of each message.
+
+from PM 21:05  to  PM 21:57    52mins
+
+///// prepare the details of the test vectors;
+
+//// when ATflushrep comes to home, home should reset the state of the block into R{0,0,0,0}; I should ckeck out if I implement the function. 
+
+from PM 22:12 to PM 22:59     47mins
+
+ I figure out the meanings of haed[4:3] in the wbrep,flushrep,wbfailrep and flufailrep.
+
+ temp_rep_head_flit_in has problems about temp_rep/req_head_flit 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/23   9h 38mins
+
+from  AM 8:31 to AM 9:44      1h 13mins
+
+/////finish code checking just now
+
+from AM 10:11 to  AM 11:59    1h 48mins
+
+/////@ AM 10:47 nearly finish the test cases, it also needs to check out.
+/////@ AM 11:18 All right!!! start to begin simulation!
+
+/////many signals stay at 'hx or 'hz, so I need to work them out!
+
+////have killed just now
+
+from PM 13:50 to  PM 15:18     1h 28mins
+
+///need regs for remember rep_local_remote and req_local_remote,
+
+/// something wrong is due to addr_sel_reg, I need to have a rest;
+/// @ PM 15:17 I solved the probelm above just now!
+
+from PM 15:30 to PM  17:08     1h 38mins    till now    6h 7mins
+
+something wrong happened to m_state_in;
+OMG!!! I mass up the case vector into 2'b00,and three 2'b01 fllowing, so I just fixed it!
+
+from PM 20:07 to PM  23:38   3h 31mins
+
+///////////////////////////////////I need to write code in the sequential order of circuit in a if block.
+
+///////////////////////////////////look! many rep from data cache should include origin src id in head[4:3] as req from home to it.
+
+finish case 2.2 just now
+
+work at case 2.3 wbfail_rep
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/24   8h 3mins
+
+from AM 8:28 to  AM 9:28  1h 
+
+////@AM 8:52 case 2 finished!!! start to test case 3.
+////@ AM 9:11 case 3.1 passed!
+////@ AM 9:22 case 3.2 passed!
+////@ AM 9:25 case 3.3 passed!
+
+///// well, I still need to check all signals through the whole test tour! 
+
+from AM 9:38 to  10:26     48mins
+
+////@ AM 10:01 I am sure that memory module can work well!!!
+
+////while there are still some work about LL/SC inst implementation for me to consider carefully!
+
+from AM 10:41 to  AM 11:21  40mins  till now 2h 28mins
+
+from PM 14:00  to  PM 16:16
+
+///// I have finished the implementation plan of syscall ,core_id read , LED write and LLSC.
+
+from PM 16:50 to PM 17:09   2h 35mins
+
+from  PM 20:20 to PM 23:20  3h
+
+/////list the module which needs test:
+      core_pc,slave_core_pc, core_cp, core_id,slave_core_id, core
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/25
+
+from AM 8:10 to  AM 11:50    3h 40mins
+
+////test core_cp now, passed@ AM 8:35
+////test core_pc and slave_core_pc now, core_pc passed, slave_core_pc passed just now.
+////@ AM 9:29test core_id and slave_core_id now,@ AM 11:39 core_id passed!  slave_core_id passed just now!
+
+from PM 14:57 to   PM 16:40   1h 43mins
+
+////core passed test just now!
+
+from  PM 17:23 to  PM 18:25   1h 2mins till   now 6h 25mins
+
+////problem: data cache should be able to process nackrep
+
+ I need to test nackrep and LLSC cases.
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/26       8h 40mins
+
+from  AM 9:25 to AM 10:30      1h 5mins
+
+/////test nackrep now
+
+from  AM10:45 to  AM 11:27      42mins
+
+/////something wrong about set_data_cpu for SC inst;
+
+from AM 14:25 to  PM 16:46       2h 21mins
+
+///now is PM 16:01, I am checking code of ring_node. Prepare to test the whole system! excited!!!
+
+from PM 17:10 to   PM 17:42        32 mins
+
+from PM 18:30 to PM 19:45         1h 15mins
+
+from  PM 20:25 to  PM  22:06      1h 41mins
+
+from  PM 22:23  to PM 23:27      1h 4mins
+///////multithread code
+
+there are something wrong with MIPS code :j  do_sum
+/////////////////////////////////////////////////////////:C style code///////////////////////////////////////////////////////
+  main()
+ {
+     int  sum;                  //addr at 0x10a0
+     int  partial_sum[4];       //from 0x1090 to 0x109c
+     int  data_ready[4];        //from 0x1080 to 0x108c
+     int  data[32];             //from 0x1000 to 0x107c
+
+     //init data
+     for(int i=0;i<4;i++)
+     {
+         data_ready[i]=0;
+         partial_sum[i]=0;
+      }
+
+      int core_id=get_coreid();
+
+      //spawn thread into all cores
+      if(core_id==0)
+      {
+           spawn_thread(1);
+
+           core_id=get_coreid();
+           if(core_id==0)
+          {
+              spawn_thread(2);
+
+              core_id=get_coreid();
+              if(core_id==0)
+              {
+                 spawn_thread(3);
+               }
+           }
+        }
+      
+      if(core_id==0)
+      {
+         for(int i=0;i<8;i++)
+         {
+            partial_sum[0]=partial_sum[0]+data[i];
+          }
+         data_ready[0]=1;
+         
+       }
+      else if(core_id==1)
+      {
+         for(int i=8;i<16;i++)
+         {
+            partial_sum[1]=partial_sum[1]+data[i];
+          }
+         data_ready[1]=1;
+         ///halt the thread on the respective core
+         halt_cpu();
+       }
+      else if(core_id==2)
+      {
+         for(int i=16;i<24;i++)
+         {
+            partial_sum[2]=partial_sum[2]+data[i];
+          }
+         data_ready[2]=1;
+         ///halt the thread on the respective core
+         halt_cpu();
+       }
+      else if(core_id==3)
+      {
+         for(int i=24;i<32;i++)
+         {
+            partial_sum[3]=partial_sum[3]+data[i];
+          }
+         data_ready[3]=1;
+         ///halt the thread on the respective core
+         halt_cpu();
+       }  
+
+      int flag=0;
+
+      while(!flag)
+     {
+        ///test if all cores have work out the partial_sum
+        if(core_id==0&&data_ready[0]&&data_ready[1]&&data_ready[2]&&data_ready[3])
+       {
+           sum=partial_sum[0]+partial_sum[1]+partial_sum[2]+partial_sum[3];
+           flag=1;
+           
+           
+        }
+     } 
+   
+     halt_cpu();
+
+  }///end of the main()
+
+   int  get_coreid()
+   {    
+      //implemented in MIPS code
+      return  core_id
+    }
+   
+  spawn_thread(int core_id )
+  {
+     //implemented in MIPS code
+     
+   }
+   
+   halt_cpu()
+   {
+    ///implemented in MIPS code
+    }
+
+////////////////////////////////////////// MIPS style code//////////////////////////////////////
+
+    main:  
+        init: ori $4, $0, 0x1080;  # get the start addr of data_ready array into r4
+              sw  $0, 0x0000($4)   # init data_ready into 0
+              sw  $0, 0x0004($4)   
+              sw  $0, 0x0008($4)
+              sw  $0, 0x000c($4)
+              sw  $0, 0x0010($4)   # init partial_sum into 0
+              sw  $0, 0x0014($4)
+              sw  $0, 0x0018($4)
+              sw  $0, 0x001c($4)
+
+        spawn_thread: 
+              lui  $1, 0x1000      # prepare the addr of core_id
+              lw   $2, 0x0000($1)  # load core_id into $2
+              bne  $2, $0, core_task    # if this core is not core 0 ,then jump to task of core
+              addiu $2, $0, 0x0001
+              syscall          # spawn thread via syscall when $2 is stored core_id
+              
+              # 00
+              # here should be the first inst addr of core 1              
+              lui  $1, 0x1000      # prepare the addr of core_id
+              lw   $2, 0x0000($1)  # load core_id into $2
+              bne  $2, $0, core_task    # if this core is not core 0 ,then jump to task of core
+              addiu $2, $0, 0x0002
+              syscall          # spawn thread via syscall when $2 is stored core_id
+
+              # here should be the first inst addr of core 2
+              lui  $1, 0x1000      # prepare the addr of core_id
+              lw   $2, 0x0000($1)  # load core_id into $2
+              bne  $2, $0, core_task    # if this core is not core 0 ,then jump to task of core
+              addiu $2, $0, 0x0003
+              syscall         # spawn thread via syscall when $2 is stored core_id
+              # here should be the first inst addr of core 3
+                 
+   core_task:   #0x0060 
+              lui  $1,  0x1000    # get the addr of core id
+       case0: addu $3, $0, $0
+              lw   $2, 0x0000($1)
+              bne  $2, $3,  case1
+
+              # task of core 1
+              ori  $30, $0, 0x1000   # prepare the first addr of  data array 
+              addiu  $4, $0, 0       # int i=0
+              addiu  $5, $0, 8       # end of i is 7
+              ori  $10, $0, 0x1080   # write addr of partial_sum[0] into $10
+              lw   $8, 0x0010($10)   # load partial_sum[0] into $8
+
+       loop0: slt  $6, $4, $5        # if i==8 jump to done
+              beq  $6, $0, case0_done #
+              sll  $6, $4, 2         # offset of one word == 4 bytes
+              addu $6, $6, $30       # addr of data[i]
+              lw   $7, 0x0000($6)    # load data[i]  into $7 
+              addu $8, $7, $8        # partial_sum[0]=partial_sum[0]+data[i]
+              addiu $4, $4, 1        # i=i+1
+              j    loop0   
+
+       case1: addiu $3, $0, 1
+              lw   $2, 0x0000($1)
+              bne  $2, $3,  case2
+
+              # task of core 1
+              ori  $30, $0, 0x1000   # prepare the first addr of  data array 
+              addiu  $4, $0, 8       # int i=8
+              addiu  $5, $0, 16       # end of i is 15
+              ori  $10, $0, 0x1080   # write addr of partial_sum[1] into $10
+              lw   $8, 0x0014($10)   # load partial_sum[1] into $8
+
+       loop1: slt  $6, $4, $5        # if i==16 jump to done
+              beq  $6, $0, case1_done   #
+              sll  $6, $4, 2         # offset of one word == 4 bytes
+              addu $6, $6, $30       # addr of data[i]
+              lw   $7, 0x0000($6)    # load data[i]  into $7 
+              addu $8, $7, $8        # partial_sum[1]=partial_sum[1]+data[i]
+              addiu $4, $4, 1        # i=i+1
+              j    loop1
+
+       case2: addiu $3, $0, 2
+              lw   $2, 0x0000($1)
+              bne  $2, $3,  case3
+              #task of core 2
+
+              ori  $30, $0, 0x1000   # prepare the first addr of  data array 
+              addiu  $4, $0, 16       # int i=16
+              addiu  $5, $0, 24       # end of i is 23
+              ori  $10, $0, 0x1080   # write addr of partial_sum[2] into $10
+              lw   $8, 0x0018($10)   # load partial_sum[2] into $8
+
+       loop2: slt  $6, $4, $5        # if i==8 jump to done
+              beq  $6, $0, case2_done #
+              sll  $6, $4, 2         # offset of one word == 4 bytes
+              addu $6, $6, $30       # addr of data[i]
+              lw   $7, 0x0000($6)    # load data[i]  into $7 
+              addu $8, $7, $8        # partial_sum[2]=partial_sum[2]+data[i]
+              addiu $4, $4, 1        # i=i+1
+
+              j    loop2
+       case3: #task of core 3
+              ori  $30, $0, 0x1000   # prepare the first addr of  data array 
+              addiu  $4, $0, 24       # int i=24
+              addiu  $5, $0, 32      # end of i is 31
+              ori  $10, $0, 0x1080   # write addr of partial_sum[3] into $10
+              lw   $8, 0x001c($10)   # load partial_sum[3] into $8
+
+       loop3: slt  $6, $4, $5        # if i==8 jump to done
+              beq  $6, $0, case3_done  #
+              sll  $6, $4, 2         # offset of one word == 4 bytes
+              addu $6, $6, $30       # addr of data[i]
+              lw   $7, 0x0000($6)    # load data[i]  into $7 
+              addu $8, $7, $8        # partial_sum[3]=partial_sum[3]+data[i]
+              addiu $4, $4, 1        # i=i+1
+              j    loop3     
+
+  case0_done: lui $3, 0x1080
+              addiu  $4, $0, 1
+              sw  $4, 0x0000($3)     # data_ready[0]=1
+              sw  $8, 0x0010($10)    # store the result to the partial_sum[0]
+              j   do_sum
+
+  case1_done: lui $3, 0x1080
+              addiu  $4, $0, 1
+              sw  $4, 0x0004($3)     # data_ready[1]=1
+              sw  $8, 0x0014($10)    # store the result to the partial_sum[1]
+              j   do_sum
+
+  case2_done: lui $3, 0x1080
+              addiu  $4, $0, 1
+              sw  $4, 0x0008($3)     # data_ready[2]=1
+              sw  $8, 0x0018($10)    # store the result to the partial_sum[2]
+              j   do_sum 
+
+  case3_done: lui $3, 0x1080
+              addiu  $4, $0, 1
+              sw  $4, 0x000c($3)     # data_ready[3]=1
+              sw  $8, 0x001c($10)    # store the result to the partial_sum[3]
+              # j   do_sum  
+
+      do_sum :# test is all cores have work out the partail_sums
+              lui  $1,  0x1000    # get the addr of core id
+              lw   $2, 0x0000($1)
+              bne  $2, $0, halt_cpu  # if core is not core 0, just jump to halt the cpu
+              ori  $4, $0, 0x1080    # prepare the first addr of data_ready array
+              lw   $5, 0x0000($4)    # get the  data_ready[0] 
+              lw   $6, 0x0004($4)    # get the  data_ready[1]
+              lw   $7, 0x0008($4)    # get the  data_ready[2]
+              lw   $8, 0x000c($4)    # get the  data_ready[3]
+              and  $5, $5, $6
+              and  $7, $7, $8
+              and  $5, $5, $7        
+              beq  $5, $0, do_sum    # if someone in cores has't finish the caculation, then wait it; else do the work out the sum
+              lw   $5, 0x0010($4)    # get the  partial_sum[0] 
+              lw   $6, 0x0014($4)    # get the  partial_sum[1]
+              lw   $7, 0x0018($4)    # get the  partial_sum[2]
+              lw   $8, 0x001c($4)    # get the  partial_sum[3]   
+              addu $5, $5, $6
+              addu $7, $7, $8
+              addu $5, $5, $7        # get the sum in $5
+              sw   $5  0x0020($4)
+    halt_cpu:
+             addiu $2, $0, 10
+             syscall
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/27   5h 24mins
+
+from AM 8:30 to   AM 9:47  1h 17mins
+
+from AM 10:27 to  AM 11:48  1h 21mins
+
+////@ AM 11:13 finish checking MIPS code and machine code
+
+from  AM 12:00 to   PM 12:20  20mins
+
+///// I find  the inst initial data is written in a wrong way in inst.txt which should be organized in 128'hxxxx style, 128 bits per line  
+
+from  AM 20:58 to  AM 23:04    2h 26mins
+
+///work task:  1,initial data;  2,ring_node0 and ring_node2  ; 3, whole_system
+
+/// I still need to do some thing to make core work well.Such as initial the ram data in btb, PHT ,RAS ,regfile and so on.  
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////today is 2016/8/28
+
+from AM 9:10 to  AM 10:28
